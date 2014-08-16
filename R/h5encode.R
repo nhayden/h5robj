@@ -16,23 +16,11 @@ setMethod("encode", "ANY", function(obj, file, name, ...) {
         message("S4!")
         browser()
         h5createGroup(file, name)
-        attrs <- attributes(obj)
         ## recursively encode each attribute
-        for (attr_name in names(attrs)) {
-            val <- attrs[[attr_name]]
-            ## only encode if meaningful value
-            if(!is.null(val) && length(val) != 0L) {
-                sub_name <- paste(name, attr_name, sep="/")
-                encode(attrs[[attr_name]], file, sub_name, ...)
-            }
-        }
+        encode_attributes(attributes(obj), file, name, ...)
     } else {
         message("not S4!")
         browser()
-        if(class(obj) == "name") {
-            message("ignoring NAMES attribute")
-            return()
-        }
         h5createGroup(file, name)
         if ("class" %in% names(attributes(obj))) {
             stop("S3 not implemented")
@@ -46,22 +34,42 @@ setMethod("encode", "ANY", function(obj, file, name, ...) {
     }
 })
 
+encode_attributes <- function(attrs, file, name, ...) {
+    ## do nothing for NULL attributes
+    if(is.null(attrs))
+        return()
+    message("encode_attributes!")
+    browser()
+    if( !is.list(attrs) )
+        stop("attrs must be list, got ", class(attrs))
+    if( !all(names(attrs) != ""))
+        stop("attrs must be named list")
+    ## recursively encode each attribute
+    for(attr_name in names(attrs)) {
+        val <- attrs[[attr_name]]
+        ## encode only meaningful values
+        if(!is.null(val) && length(val) != 0L) {
+            sub_name <- paste(name, attr_name, sep="/")
+            encode(attrs[[attr_name]], file, sub_name, ...)
+        }
+    }
+}
+
+encode.name <- function(obj, file, name, ...) {
+    message("encode.name!")
+    browser()
+    encode_attributes(attributes(obj), file, name, ...)
+    attributes(obj) <- NULL
+    class(obj) <- "name"
+    h5write(as.character(obj), file, paste(name, "name", sep="/"),
+            write.attributes=TRUE)
+}
+
 encode.default <- function(obj, file, name, ...) {
     message("encode.default!")
     browser()
     data_name <- paste(name, "data", sep="/")
-    attrs <- attributes(obj)
-    if(!is.null(attrs)) {
-        ## recursively encode each attribute
-        for (attr_name in names(attrs)) {
-            val <- attrs[[attr_name]]
-            ## only encode if meaningful value
-            if(!is.null(val) && length(val) != 0L) {
-                sub_name <- paste(name, attr_name, sep="/")
-                encode(attrs[[attr_name]], file, sub_name, ...)
-            }
-        }
-    }
+    encode_attributes(attributes(obj), file, name, ...)
     h5write(obj, file, data_name, ...)
 }
 
