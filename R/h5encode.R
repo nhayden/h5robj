@@ -1,9 +1,13 @@
 ##h5write <- function(...) print(...)
 
 h5type <- function(x) {
-    switch(typeof(x), logical="LGLSXP", integer="INTSXP",
-           double="REALXSP", S4="S4SXP", list="VECSXP",
-           stop("unhandled type ", typeof(x)))
+    switch(typeof(x),
+           ## primitives
+           logical="LGLSXP", integer="INTSXP", double="REALXSP",
+           raw="RAWSXP",
+           ## other
+           S4="S4SXP", list="VECSXP", NULL="NILSXP", name="SYMSXP",
+           stop("unhandled type '", typeof(x), "'"))
 }
 
 encode <- function(obj, file, name, ...)
@@ -33,6 +37,23 @@ setMethod("encode", "ANY", function(obj, file, name, ...) {
         }
     }
 })
+
+encode_bookkeeping <- function(obj, file, name, ...) {
+    message("encode_bookkeeping!")
+    fid <- H5Fopen(file)
+    oid <- H5Oopen(fid, name)
+    bookkeep <- list()
+    ## XXXX FIX ME: encode package as NULL?
+    if(isS4(obj)) {
+        if(is.null(attr(class(obj), "package")))
+            stop("cannot encode: package attribute required on S4 object's class attribute")
+        h5writeAttribute(attr(class(obj), "package"), oid, "package")
+    }
+    h5writeAttribute(as.character(class(obj)), oid, "class")
+    h5writeAttribute(h5type(obj), oid, "sexptype")
+
+    H5close()
+}
 
 encode_attributes <- function(attrs, file, name, ...) {
     ## do nothing for NULL attributes
