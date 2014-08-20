@@ -76,6 +76,7 @@ test_encode_bookkeeping_S4 <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
+    ## create arbitrary H5 object to attach attributes to
     h5createGroup(h5fl, top_name)
     rhdf5:::encode_bookkeeping(ir, h5fl, top_name)
     H5close()
@@ -101,6 +102,7 @@ test_encode_bookkeeping_primitive <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
+    ## create arbitrary H5 object to attach attributes to
     h5createGroup(h5fl, top_name)
     rhdf5:::encode_bookkeeping(ints, h5fl, top_name)
     H5close()
@@ -124,6 +126,7 @@ test_encode_bookkeeping_S3 <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
+    ## create arbitrary H5 object to attach attributes to
     h5createGroup(h5fl, top_name)
     rhdf5:::encode_bookkeeping(df, h5fl, top_name)
     H5close()
@@ -137,3 +140,51 @@ test_encode_bookkeeping_S3 <- function() {
     H5close()    
 }
 ##test_encode_bookkeeping_S3()
+
+test_encode_bookkeeping_NULLobj <- function() {
+    x <- NULL
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+
+    ## create arbitrary H5 object to attach attributes to
+    h5createGroup(h5fl, top_name)
+    rhdf5:::encode_bookkeeping(x, h5fl, top_name)
+    H5close()
+
+    fid <- H5Fopen(h5fl)
+    oid <- H5Oopen(fid, top_name)
+    aid_class <- H5Aopen(oid, "class")
+    checkIdentical("NULL", as.character(H5Aread(aid_class)))
+    aid_sexptype <- H5Aopen(oid, "sexptype")
+    checkIdentical("NILSXP", as.character(H5Aread(aid_sexptype)))
+    H5close()    
+}
+##test_encode_bookkeeping_NULLobj()
+
+test_encode_bookkeeping_empty_list <- function() {
+    l <- list()
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+
+    ## create arbitrary H5 object to attach attributes to
+    h5createGroup(h5fl, top_name)
+    rhdf5:::encode_bookkeeping(l, h5fl, top_name)
+    H5close()
+
+    fid <- H5Fopen(h5fl)
+    oid <- H5Oopen(fid, top_name)
+    aid_class <- H5Aopen(oid, "class")
+    checkIdentical("list", as.character(H5Aread(aid_class)))
+    aid_sexptype <- H5Aopen(oid, "sexptype")
+    checkIdentical("VECSXP", as.character(H5Aread(aid_sexptype)))
+    H5close()    
+}
+##test_encode_bookkeeping_empty_list()

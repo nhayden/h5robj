@@ -42,8 +42,7 @@ encode_bookkeeping <- function(obj, file, name, ...) {
     message("encode_bookkeeping!")
     fid <- H5Fopen(file)
     oid <- H5Oopen(fid, name)
-    bookkeep <- list()
-    ## XXXX FIX ME: encode package as NULL?
+    ## XXXX FIX ME: encode package as NULL in non-S4 cases?
     if(isS4(obj)) {
         if(is.null(attr(class(obj), "package")))
             stop("cannot encode: package attribute required on S4 object's class attribute")
