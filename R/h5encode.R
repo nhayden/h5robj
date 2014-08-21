@@ -4,7 +4,7 @@ h5type <- function(x) {
     switch(typeof(x),
            ## primitives
            logical="LGLSXP", integer="INTSXP", double="REALXSP",
-           raw="RAWSXP",
+           character="STRSXP", raw="RAWSXP",
            ## other
            S4="S4SXP", list="VECSXP", NULL="NILSXP", name="SYMSXP",
            stop("unhandled type '", typeof(x), "'"))
@@ -16,24 +16,24 @@ encode <- function(obj, file, name, ...)
 setGeneric("encode")
 
 setMethod("encode", "ANY", function(obj, file, name, ...) {
-    if (isS4(obj)) {
-        message("S4!")
-        ##browser()
-        h5createGroup(file, name)
-        ## recursively encode each attribute
-        encode_attributes(attributes(obj), file, name, ...)
-    } else {
-        message("not S4!")
-        ##browser()
-        h5createGroup(file, name)
-        if ("class" %in% names(attributes(obj))) {
-            stop("S3 not implemented")
-            message("S3!")
-            ##h5write("S3")
-            callNextMethod(obj, file, name, ...)
+    h5createGroup(file, name)
+    ##browser()
+    encode_bookkeeping(obj, file, name)
+    ## if NULL, only need to record bookkeeping (namely "NILSXP")
+    if(!is.null(obj)) {
+        if (isS4(obj)) {
+            message("S4!")
+            ##browser()
+            ## recursively encode each attribute
+            encode_list_like(attributes(obj), file, name, ...)
         } else {
-            callNextMethod(obj, file, name, ...)
-            ##h5write(sprintf("unimplemented '%s'", class(obj)))
+            message("not S4!")
+            ##browser()
+            if(is.recursive(obj)) {
+                encode_list_like(obj, file, name, ...)
+            } else {
+                callNextMethod(obj, file, name, ...)
+            }
         }
     }
 })
@@ -54,31 +54,32 @@ encode_bookkeeping <- function(obj, file, name, ...) {
     H5close()
 }
 
-encode_attributes <- function(attrs, file, name, ...) {
-    ## do nothing for NULL attributes
-    if(is.null(attrs))
+encode_list_like <- function(obj, file, name, ...) {
+    ## do nothing for NULL objects (that is, the "data" part;
+    ## bookkeeping encoded in separate function)
+    if(is.null(obj))
         return()
-    message("encode_attributes!")
+    message("encode_list_like!")
     ##browser()
-    if( !is.list(attrs) )
-        stop("attrs must be list, got ", class(attrs))
-    if( !all(names(attrs) != ""))
-        stop("attrs must be named list")
+    if( !is.list(obj) )
+        stop("obj must be list, got ", class(obj))
+    if( !all(names(obj) != ""))
+        stop("obj must be named list")
     ## recursively encode each attribute
-    for(attr_name in names(attrs)) {
-        val <- attrs[[attr_name]]
-        ## encode only meaningful values
-        if(!is.null(val) && length(val) != 0L) {
+    for(attr_name in names(obj)) {
+        val <- obj[[attr_name]]
+        ## ## encode only meaningful values
+        ## if(!is.null(val) && length(val) != 0L) {
             sub_name <- paste(name, attr_name, sep="/")
-            encode(attrs[[attr_name]], file, sub_name, ...)
-        }
+            encode(obj[[attr_name]], file, sub_name, ...)
+        ## }
     }
 }
 
 encode.name <- function(obj, file, name, ...) {
     message("encode.name!")
     ##browser()
-    encode_attributes(attributes(obj), file, name, ...)
+    encode_list_like(attributes(obj), file, name, ...)
     h5write(as.character(obj), file, paste(name, "data", sep="/"),
             write.attributes=TRUE)
 }
@@ -86,13 +87,7 @@ encode.name <- function(obj, file, name, ...) {
 encode.default <- function(obj, file, name, ...) {
     message("encode.default!")
     ##browser()
+    encode_list_like(attributes(obj), file, name, ...)
     data_name <- paste(name, "data", sep="/")
-    encode_attributes(attributes(obj), file, name, ...)
     h5write(obj, file, data_name, ...)
 }
-
-## setMethod("encode", "matrix", function(obj, ...) {
-    
-## })
-
-## encode.Foo3 <- function(obj, ...) "Foo3"

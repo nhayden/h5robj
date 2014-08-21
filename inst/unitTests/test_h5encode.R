@@ -18,6 +18,8 @@ suppressMessages({
 }
 
 trace(rhdf5:::encode, quote(print(obj)))
+trace(rhdf5:::encode_bookkeeping, quote(print(obj)))
+trace(rhdf5:::encode_list_like, quote(print(obj)))
 
 ## XXXX FIX ME: complete
 test_write_IRanges <- function() {
@@ -137,11 +139,11 @@ test_encode_bookkeeping_S3 <- function() {
     checkIdentical("data.frame", as.character(H5Aread(aid_class)))
     aid_sexptype <- H5Aopen(oid, "sexptype")
     checkIdentical("VECSXP", as.character(H5Aread(aid_sexptype)))
-    H5close()    
+    H5close()
 }
 ##test_encode_bookkeeping_S3()
 
-test_encode_bookkeeping_NULLobj <- function() {
+test_encode_NULLobj <- function() {
     x <- NULL
 
     h5fl <- tempfile(fileext=".h5")
@@ -150,9 +152,7 @@ test_encode_bookkeeping_NULLobj <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    ## create arbitrary H5 object to attach attributes to
-    h5createGroup(h5fl, top_name)
-    rhdf5:::encode_bookkeeping(x, h5fl, top_name)
+    rhdf5:::encode(x, h5fl, top_name)
     H5close()
 
     fid <- H5Fopen(h5fl)
@@ -161,9 +161,9 @@ test_encode_bookkeeping_NULLobj <- function() {
     checkIdentical("NULL", as.character(H5Aread(aid_class)))
     aid_sexptype <- H5Aopen(oid, "sexptype")
     checkIdentical("NILSXP", as.character(H5Aread(aid_sexptype)))
-    H5close()    
+    H5close()
 }
-##test_encode_bookkeeping_NULLobj()
+##test_encode_NULLobj()
 
 test_encode_bookkeeping_empty_list <- function() {
     l <- list()
@@ -185,6 +185,65 @@ test_encode_bookkeeping_empty_list <- function() {
     checkIdentical("list", as.character(H5Aread(aid_class)))
     aid_sexptype <- H5Aopen(oid, "sexptype")
     checkIdentical("VECSXP", as.character(H5Aread(aid_sexptype)))
-    H5close()    
+    H5close()
 }
 ##test_encode_bookkeeping_empty_list()
+
+test_encode_list_with_NULLs <- function() {
+    l <- list(x=1:3, y=NULL, z=NULL)
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "list"
+
+    rhdf5:::encode(l, h5fl, top_name)
+    H5close()
+
+    ## test outer (l)
+    fid <- H5Fopen(h5fl)
+    oid <- H5Oopen(fid, top_name)
+    aid_class <- H5Aopen(oid, "class")
+    checkIdentical("list", as.character(H5Aread(aid_class)))
+    aid_sexptype <- H5Aopen(oid, "sexptype")
+    checkIdentical("VECSXP", as.character(H5Aread(aid_sexptype)))
+    H5close()
+
+    ## test x
+    x_name <- paste(top_name, "x", sep="/")
+    fid <- H5Fopen(h5fl)
+    oid <- H5Oopen(fid, x_name)
+    aid_class <- H5Aopen(oid, "class")
+    checkIdentical("integer", as.character(H5Aread(aid_class)))
+    aid_sexptype <- H5Aopen(oid, "sexptype")
+    checkIdentical("INTSXP", as.character(H5Aread(aid_sexptype)))
+    H5close()
+    x_data_name <- paste(x_name, "data", sep="/")
+    x_data <- as.integer(h5read(h5fl, x_data_name))
+    checkIdentical(l[["x"]], x_data)
+    H5close()
+
+    ## test y
+    y_name <- paste(top_name, "y", sep="/")
+    fid <- H5Fopen(h5fl)
+    oid <- H5Oopen(fid, y_name)
+    aid_class <- H5Aopen(oid, "class")
+    checkIdentical("NULL", as.character(H5Aread(aid_class)))
+    aid_sexptype <- H5Aopen(oid, "sexptype")
+    checkIdentical("NILSXP", as.character(H5Aread(aid_sexptype)))
+    H5close()
+
+    ## test z
+    z_name <- paste(top_name, "z", sep="/")
+    fid <- H5Fopen(h5fl)
+    oid <- H5Oopen(fid, z_name)
+    aid_class <- H5Aopen(oid, "class")
+    checkIdentical("NULL", as.character(H5Aread(aid_class)))
+    aid_sexptype <- H5Aopen(oid, "sexptype")
+    checkIdentical("NILSXP", as.character(H5Aread(aid_sexptype)))
+    H5close()
+
+    browser()
+}
+test_encode_list_with_NULLs()
