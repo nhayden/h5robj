@@ -1,7 +1,7 @@
 h5type <- function(x) {
     switch(typeof(x),
            ## primitives
-           logical="LGLSXP", integer="INTSXP", double="REALXSP",
+           logical="LGLSXP", integer="INTSXP", double="REALSXP",
            character="STRSXP", raw="RAWSXP",
            ## other
            S4="S4SXP", list="VECSXP", NULL="NILSXP", name="SYMSXP",

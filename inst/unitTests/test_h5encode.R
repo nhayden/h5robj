@@ -14,7 +14,7 @@ suppressMessages({
 }
 
 .data.frame <- function() {
-    data.frame(x=1, y=1:10, z=seq(1.1, 10.1))
+    data.frame(y=1:10, z=seq(1.1, 10.1))
 }
 
 .factor <- function() {
@@ -90,16 +90,13 @@ test_encode_bookkeeping_S4 <- function() {
     rhdf5:::encode_bookkeeping(ir, h5fl, top_name)
     H5close()
 
-    fid <- H5Fopen(h5fl)
-    oid <- H5Oopen(fid, top_name)
-    aid_class <- H5Aopen(oid, "class")
-    checkIdentical("IRanges", as.character(H5Aread(aid_class)))
-    aid_pkg <- H5Aopen(oid, "package")
-    checkIdentical("IRanges", as.character(H5Aread(aid_pkg)))
-    aid_sexptype <- H5Aopen(oid, "sexptype")
-    checkIdentical("S4SXP", as.character(H5Aread(aid_sexptype)))
+    foo_ats <- lapply(h5readAttributes(h5fl, "foo"), as.character)
+    checkIdentical("IRanges", foo_ats[["class"]])
+    checkIdentical("IRanges", foo_ats[["package"]])
+    checkIdentical("S4SXP", foo_ats[["sexptype"]])
     H5close()
 }
+##test_encode_bookkeeping_S4()
 
 test_encode_bookkeeping_primitive <- function() {
     ints <- 1:20
@@ -115,14 +112,12 @@ test_encode_bookkeeping_primitive <- function() {
     rhdf5:::encode_bookkeeping(ints, h5fl, top_name)
     H5close()
 
-    fid <- H5Fopen(h5fl)
-    oid <- H5Oopen(fid, top_name)
-    aid_class <- H5Aopen(oid, "class")
-    checkIdentical("integer", as.character(H5Aread(aid_class)))
-    aid_sexptype <- H5Aopen(oid, "sexptype")
-    checkIdentical("INTSXP", as.character(H5Aread(aid_sexptype)))
+    foo_ats <- lapply(h5readAttributes(h5fl, "foo"), as.character)
+    checkIdentical("integer", foo_ats[["class"]])
+    checkIdentical("INTSXP", foo_ats[["sexptype"]])
     H5close()
 }
+##test_encode_bookkeeping_primitive()
 
 test_encode_bookkeeping_S3 <- function() {
     df <- .data.frame()
@@ -138,12 +133,9 @@ test_encode_bookkeeping_S3 <- function() {
     rhdf5:::encode_bookkeeping(df, h5fl, top_name)
     H5close()
 
-    fid <- H5Fopen(h5fl)
-    oid <- H5Oopen(fid, top_name)
-    aid_class <- H5Aopen(oid, "class")
-    checkIdentical("data.frame", as.character(H5Aread(aid_class)))
-    aid_sexptype <- H5Aopen(oid, "sexptype")
-    checkIdentical("VECSXP", as.character(H5Aread(aid_sexptype)))
+    foo_ats <- lapply(h5readAttributes(h5fl, "foo"), as.character)
+    checkIdentical("data.frame", foo_ats[["class"]])
+    checkIdentical("VECSXP", foo_ats[["sexptype"]])
     H5close()
 }
 
@@ -161,12 +153,9 @@ test_encode_bookkeeping_empty_list <- function() {
     rhdf5:::encode_bookkeeping(l, h5fl, top_name)
     H5close()
 
-    fid <- H5Fopen(h5fl)
-    oid <- H5Oopen(fid, top_name)
-    aid_class <- H5Aopen(oid, "class")
-    checkIdentical("list", as.character(H5Aread(aid_class)))
-    aid_sexptype <- H5Aopen(oid, "sexptype")
-    checkIdentical("VECSXP", as.character(H5Aread(aid_sexptype)))
+    foo_ats <- lapply(h5readAttributes(h5fl, "foo"), as.character)
+    checkIdentical("list", foo_ats[["class"]])
+    checkIdentical("VECSXP", foo_ats[["sexptype"]])
     H5close()
 }
 
@@ -182,12 +171,9 @@ test_encode_NULLobj <- function() {
     rhdf5:::encode(x, h5fl, top_name)
     H5close()
 
-    fid <- H5Fopen(h5fl)
-    oid <- H5Oopen(fid, top_name)
-    aid_class <- H5Aopen(oid, "class")
-    checkIdentical("NULL", as.character(H5Aread(aid_class)))
-    aid_sexptype <- H5Aopen(oid, "sexptype")
-    checkIdentical("NILSXP", as.character(H5Aread(aid_sexptype)))
+    foo_ats <- lapply(h5readAttributes(h5fl, "foo"), as.character)
+    checkIdentical("NULL", foo_ats[["class"]])
+    checkIdentical("NILSXP", foo_ats[["sexptype"]])
     H5close()
 }
 
@@ -204,22 +190,16 @@ test_encode_list_with_NULLs <- function() {
     H5close()
 
     ## test outer (l)
-    fid <- H5Fopen(h5fl)
-    oid <- H5Oopen(fid, top_name)
-    aid_class <- H5Aopen(oid, "class")
-    checkIdentical("list", as.character(H5Aread(aid_class)))
-    aid_sexptype <- H5Aopen(oid, "sexptype")
-    checkIdentical("VECSXP", as.character(H5Aread(aid_sexptype)))
+    l_ats <- lapply(h5readAttributes(h5fl, "list"), as.character)
+    checkIdentical("list", l_ats[["class"]])
+    checkIdentical("VECSXP", l_ats[["sexptype"]])
     H5close()
 
     ## test x
-    x_name <- paste(top_name, "x", sep="/")
-    fid <- H5Fopen(h5fl)
-    oid <- H5Oopen(fid, x_name)
-    aid_class <- H5Aopen(oid, "class")
-    checkIdentical("integer", as.character(H5Aread(aid_class)))
-    aid_sexptype <- H5Aopen(oid, "sexptype")
-    checkIdentical("INTSXP", as.character(H5Aread(aid_sexptype)))
+    x_name <- "list/x"
+    x_ats <- lapply(h5readAttributes(h5fl, x_name), as.character)
+    checkIdentical("integer", x_ats[["class"]])
+    checkIdentical("INTSXP", x_ats[["sexptype"]])
     H5close()
     x_data_name <- paste(x_name, "data", sep="/")
     x_data <- as.integer(h5read(h5fl, x_data_name))
@@ -227,23 +207,17 @@ test_encode_list_with_NULLs <- function() {
     H5close()
 
     ## test y
-    y_name <- paste(top_name, "y", sep="/")
-    fid <- H5Fopen(h5fl)
-    oid <- H5Oopen(fid, y_name)
-    aid_class <- H5Aopen(oid, "class")
-    checkIdentical("NULL", as.character(H5Aread(aid_class)))
-    aid_sexptype <- H5Aopen(oid, "sexptype")
-    checkIdentical("NILSXP", as.character(H5Aread(aid_sexptype)))
+    y_name <- "list/y"
+    y_ats <- lapply(h5readAttributes(h5fl, y_name), as.character)
+    checkIdentical("NULL", y_ats[["class"]])
+    checkIdentical("NILSXP", y_ats[["sexptype"]])
     H5close()
 
     ## test z
-    z_name <- paste(top_name, "z", sep="/")
-    fid <- H5Fopen(h5fl)
-    oid <- H5Oopen(fid, z_name)
-    aid_class <- H5Aopen(oid, "class")
-    checkIdentical("NULL", as.character(H5Aread(aid_class)))
-    aid_sexptype <- H5Aopen(oid, "sexptype")
-    checkIdentical("NILSXP", as.character(H5Aread(aid_sexptype)))
+    z_name <- "list/z"
+    z_ats <- lapply(h5readAttributes(h5fl, z_name), as.character)
+    checkIdentical("NULL", z_ats[["class"]])
+    checkIdentical("NILSXP", z_ats[["sexptype"]])
     H5close()
 }
 ##test_encode_list_with_NULLs()
@@ -260,9 +234,30 @@ test_encode_data.frame <- function() {
     rhdf5:::encode(df, h5fl, top_name)
     H5close()
 
-    browser()
+    ## outer attributes
+    df_ats <- lapply(h5readAttributes(h5fl, top_name), as.character)
+    checkIdentical("data.frame", df_ats[["class"]])
+    checkIdentical("VECSXP", df_ats[["sexptype"]])
+    H5close()
+    ## y
+    y_name <- "foo/y"
+    y_ats <- lapply(h5readAttributes(h5fl, y_name), as.character)
+    checkIdentical("integer", y_ats[["class"]])
+    checkIdentical("INTSXP", y_ats[["sexptype"]])
+    y_data <- as.integer(h5read(h5fl, "foo/y/data"))
+    checkIdentical(df[["y"]], y_data)
+    H5close()
+    ## z
+    z_name <- "foo/z"
+    z_ats <- lapply(h5readAttributes(h5fl, z_name), as.character)
+    H5close()
+    checkIdentical("numeric", z_ats[["class"]])
+    checkIdentical("REALSXP", z_ats[["sexptype"]])
+    z_data <- as.double(h5read(h5fl, "foo/z/data"))
+    checkIdentical(df[["z"]], z_data)
+    H5close()
 }
-test_encode_data.frame()
+##test_encode_data.frame()
 
 test_encode_factor <- function() {
     ff <- .factor()
@@ -276,12 +271,9 @@ test_encode_factor <- function() {
     H5close()
 
     ## outer attributes
-    fid <- H5Fopen(h5fl)
-    oid <- H5Oopen(fid, top_name)
-    aid_class <- H5Aopen(oid, "class")
-    checkIdentical("factor", as.character(H5Aread(aid_class)))
-    aid_sexptype <- H5Aopen(oid, "sexptype")
-    checkIdentical("INTSXP", as.character(H5Aread(aid_sexptype)))
+    foo_ats <- lapply(h5readAttributes(h5fl, top_name), as.character)
+    checkIdentical("factor", foo_ats[["class"]])
+    checkIdentical("INTSXP", foo_ats[["sexptype"]])
     H5close()
 
     ## data
@@ -290,35 +282,25 @@ test_encode_factor <- function() {
     checkIdentical(as.integer(ff), data)
 
     ## class attribute encoded as group (has its own class attribute also)
-    class_group_path <- paste(top_name, "class", sep="/")
-    fid <- H5Fopen(h5fl)
-    gid <- H5Gopen(fid, class_group_path)
-    ## class attribute (of class group)
-    aid_class <- H5Aopen(gid, "class")
-    checkIdentical("character", as.character(H5Aread(aid_class)))
-    ## sexptype
-    aid_sexptype <- H5Aopen(oid, "sexptype")
-    checkIdentical("STRSXP", as.character(H5Aread(aid_sexptype)))
+    class_group_path <- "foo/class"
+    class_ats <- lapply(h5readAttributes(h5fl, class_group_path), as.character)
+    checkIdentical("character", class_ats[["class"]])
+    checkIdentical("STRSXP", class_ats[["sexptype"]])
     H5close()
     ## value
-    data_name <- paste(class_group_path, "data", sep="/")
+    data_name <- "foo/class/data"
     data <- as.character(h5read(h5fl, data_name))
     checkIdentical("factor", data)
     H5close()
 
     ## levels attribute encoded as group
-    levels_group_path <- paste(top_name, "levels", sep="/")
-    fid <- H5Fopen(h5fl)
-    gid <- H5Gopen(fid, levels_group_path)
-    ## class attribute (of levels group)
-    aid_class <- H5Aopen(gid, "class")
-    checkIdentical("character", as.character(H5Aread(aid_class)))
-    ## sexptype
-    aid_sexptype <- H5Aopen(oid, "sexptype")
-    checkIdentical("STRSXP", as.character(H5Aread(aid_sexptype)))
+    levels_group_path <- "foo/levels"
+    levels_ats <- lapply(h5readAttributes(h5fl, class_group_path), as.character)
+    checkIdentical("character", levels_ats[["class"]])
+    checkIdentical("STRSXP", levels_ats[["sexptype"]])
     H5close()
     ## value
-    data_name <- paste(levels_group_path, "data", sep="/")
+    data_name <- "foo/levels/data"
     data <- as.character(h5read(h5fl, data_name))
     checkIdentical(levels(ff), data)
 }
