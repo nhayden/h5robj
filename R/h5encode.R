@@ -1,5 +1,3 @@
-##h5write <- function(...) print(...)
-
 h5type <- function(x) {
     switch(typeof(x),
            ## primitives
@@ -62,17 +60,14 @@ encode_list_like <- function(obj, file, name, ...) {
     message("encode_list_like!")
     ##browser()
     if( !is.list(obj) )
-        stop("obj must be list, got ", class(obj))
+        stop("obj must be list, got '", class(obj), "'")
     if( !all(names(obj) != ""))
         stop("obj must be named list")
     ## recursively encode each attribute
     for(attr_name in names(obj)) {
         val <- obj[[attr_name]]
-        ## ## encode only meaningful values
-        ## if(!is.null(val) && length(val) != 0L) {
-            sub_name <- paste(name, attr_name, sep="/")
-            encode(obj[[attr_name]], file, sub_name, ...)
-        ## }
+        sub_name <- paste(name, attr_name, sep="/")
+        encode(obj[[attr_name]], file, sub_name, ...)
     }
 }
 
@@ -89,5 +84,7 @@ encode.default <- function(obj, file, name, ...) {
     ##browser()
     encode_list_like(attributes(obj), file, name, ...)
     data_name <- paste(name, "data", sep="/")
+    ## expose raw "nugget"
+    attributes(obj) <- NULL
     h5write(obj, file, data_name, ...)
 }
