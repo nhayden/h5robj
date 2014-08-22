@@ -24,9 +24,7 @@ suppressMessages({
 }
 
 .matrix <- function() {
-    mdat <- matrix(c(1,2,3, 11,12,13), nrow = 2, ncol = 3, byrow = TRUE,
-                   dimnames = list(c("row1", "row2"),
-                     c("C.1", "C.2", "C.3")))
+    mdat <- matrix(1, dimnames=list("a", Col="b"))
 }
 
 trace(rhdf5:::encode, quote(print(obj)))
@@ -165,6 +163,27 @@ test_encode_bookkeeping_empty_list <- function() {
     H5close()
 }
 
+test_encode_bookkeeping_NULLobj <- function() {
+    x <- NULL
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+
+    h5createGroup(h5fl, top_name)
+    rhdf5:::encode_bookkeeping(x, h5fl, top_name)
+    H5close()
+
+    foo_ats <- lapply(h5readAttributes(h5fl, "foo"), as.character)
+    checkIdentical("NULL", foo_ats[["class"]])
+    checkIdentical("NILSXP", foo_ats[["sexptype"]])
+    H5close()
+}
+##test_encode_bookkeeping_NULLobj()
+
+## ignore bookkeeping (tested separately)
 test_encode_NULLobj <- function() {
     x <- NULL
 
@@ -176,12 +195,20 @@ test_encode_NULLobj <- function() {
 
     rhdf5:::encode(x, h5fl, top_name)
     H5close()
+    
+    ## adapted from h5readAttributes.R
+    loc = rhdf5:::h5checktypeOrOpenLoc(h5fl, readonly=TRUE)
+    ## check no data encoded
+    checkTrue(!H5Lexists(loc$H5Identifier, "foo/attrs/data"))
+    rhdf5:::h5closeitLoc(loc)
 
-    foo_ats <- lapply(h5readAttributes(h5fl, "foo"), as.character)
-    checkIdentical("NULL", foo_ats[["class"]])
-    checkIdentical("NILSXP", foo_ats[["sexptype"]])
-    H5close()
+    browser()
+    foo_attrs <- lapply(h5readAttributes(h5fl, "foo/attrs"), as.character)
+    checkIdentical("NULL", foo_attrs[["class"]])
+    checkIdentical("NILSXP", foo_attrs[["sexptype"]])
+    
 }
+test_encode_NULLobj()
 
 test_encode_list_with_NULLs <- function() {
     l <- list(x=1:3, y=NULL, z=NULL)
@@ -357,4 +384,4 @@ test_encode_matrix <- function() {
     ## data <- as.character(h5read(h5fl, data_name))
     ## checkIdentical(levels(ff), data)
 }
-test_encode_matrix()
+##test_encode_matrix()
