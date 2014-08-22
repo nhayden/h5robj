@@ -8,34 +8,6 @@ h5type <- function(x) {
            stop("unhandled type '", typeof(x), "'"))
 }
 
-encode <- function(obj, file, name, ...)
-    UseMethod("encode")
-
-setGeneric("encode")
-
-setMethod("encode", "ANY", function(obj, file, name, ...) {
-    h5createGroup(file, name)
-    ##browser()
-    encode_bookkeeping(obj, file, name)
-    ## if NULL, only need to record bookkeeping (namely "NILSXP")
-    if(!is.null(obj)) {
-        if (isS4(obj)) {
-            message("S4!")
-            ##browser()
-            ## recursively encode each attribute
-            encode_list_like(attributes(obj), file, name, ...)
-        } else {
-            message("not S4!")
-            ##browser()
-            if(is.recursive(obj)) {
-                encode_list_like(obj, file, name, ...)
-            } else {
-                callNextMethod(obj, file, name, ...)
-            }
-        }
-    }
-})
-
 encode_bookkeeping <- function(obj, file, name, ...) {
     message("encode_bookkeeping!")
     fid <- H5Fopen(file)
@@ -52,39 +24,68 @@ encode_bookkeeping <- function(obj, file, name, ...) {
     H5close()
 }
 
-encode_list_like <- function(obj, file, name, ...) {
-    ## do nothing for NULL objects (that is, the "data" part;
-    ## bookkeeping encoded in separate function)
+encode <- function(obj, file, name, ...)
+    UseMethod("encode")
+
+setGeneric("encode")
+
+setMethod("encode", "ANY", function(obj, file, name, ...) {
+    h5createGroup(file, name)
+    encode_bookkeeping(obj, file, name)
+    if(is.null(obj) || length(obj) == 0L) ## check length for empty lists
+        return()
+    encode_attrs(obj, file, name)
+    encode_data(obj, file, name)
+})
+
+encode_attrs <- function(obj, file, name, ...) {
+    if(is.null(obj) || is.null(attributes(obj)))
+        return()
+    attrs_name <- paste(name, "attrs", sep="/")
+    h5createGroup(file, attrs_name)
+    ##encode_data(attributes(obj), file, attrs_name, ...)
+    encode_list_like(attributes(obj), file, attrs_name, must.use.names=TRUE, ...)
+}
+
+encode_data <- function(obj, file, name, ...) {
     if(is.null(obj))
         return()
-    message("encode_list_like!")
-    ##browser()
-    if( !is.list(obj) )
-        stop("obj must be list, got '", class(obj), "'")
-    ##if( is.null(names(obj)) || any(names(obj) == ""))
-    if( any(names(obj) == "") )
-        stop("obj must be named list")
-    ## recursively encode each attribute
-    ## XXXX FIX ME: if unnamed, loop executes 0 times, function returns
-    for(attr_name in names(obj)) {
-        val <- obj[[attr_name]]
-        sub_name <- paste(name, attr_name, sep="/")
-        encode(obj[[attr_name]], file, sub_name, ...)
+    data_name <- paste(name, "data", sep="/")
+    h5createGroup(file, data_name)
+    ## S4 objects are attribute-only
+    if (!isS4(obj)) {
+        if(is.recursive(obj)) {
+            encode_list_like(obj, file, data_name, ...)
+        } else {
+            callNextMethod(obj, file, data_name, ...)
+        }
     }
 }
 
-encode.name <- function(obj, file, name, ...) {
-    message("encode.name!")
+encode_list_like <- function(obj, file, name, must.use.names=FALSE, ...) {
+    message("encode_list_like!")
     ##browser()
-    encode_list_like(attributes(obj), file, name, ...)
-    h5write(as.character(obj), file, paste(name, "data", sep="/"),
-            write.attributes=TRUE)
+    if( !is.list(obj) )
+        stop("'obj' must be list, got '", class(obj), "'")
+    if(must.use.names && is.null(names(obj)))
+        stop("must.use.names TRUE, but no names attribute")
+
+    ## recursively encode each attribute in separate GROUP
+    group_names <- list()
+    if(must.use.names)
+        group_names <- names(obj)
+    else
+        group_names <- paste0("elt", seq_along(obj))
+    for(i in seq_along(obj)) {
+        sub_name <- paste(name, group_names[[i]], sep="/")
+        encode(obj[[i]], file, sub_name, ...)
+    }
 }
 
 encode.default <- function(obj, file, name, ...) {
     message("encode.default!")
     ##browser()
-    encode_list_like(attributes(obj), file, name, ...)
+    ##encode_list_like(attributes(obj), file, name, ...)
     data_name <- paste(name, "data", sep="/")
     ## expose raw "nugget"
     attributes(obj) <- NULL

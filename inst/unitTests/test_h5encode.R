@@ -27,9 +27,21 @@ suppressMessages({
     mdat <- matrix(1, dimnames=list("a", Col="b"))
 }
 
-trace(rhdf5:::encode, quote(print(obj)))
-trace(rhdf5:::encode_bookkeeping, quote(print(obj)))
-trace(rhdf5:::encode_list_like, quote(print(obj)))
+## only expected to work for datasets and groups
+.isAbsent <- function(file, name) {
+    loc = rhdf5:::h5checktypeOrOpenLoc(file, readonly=TRUE)
+    res <- !H5Lexists(loc$H5Identifier, name)
+    rhdf5:::h5closeitLoc(loc)
+    res
+}
+
+## trace(rhdf5:::encode, quote(print(obj)))
+
+## trace(rhdf5:::encode_bookkeeping, quote(print(obj)))
+## trace(rhdf5:::encode_list_like, quote(print(obj)))
+## trace(rhdf5:::encode.default, browser)
+## trace(rhdf5:::encode_attrs, browser)
+## trace(rhdf5:::encode_data, browser)
 options(error=recover)
 
 ## XXXX FIX ME: complete
@@ -102,27 +114,6 @@ test_encode_bookkeeping_S4 <- function() {
 }
 ##test_encode_bookkeeping_S4()
 
-test_encode_bookkeeping_primitive <- function() {
-    ints <- 1:20
-    
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
-    top_name <- "foo"
-
-    ## create arbitrary H5 object to attach attributes to
-    h5createGroup(h5fl, top_name)
-    rhdf5:::encode_bookkeeping(ints, h5fl, top_name)
-    H5close()
-
-    foo_ats <- lapply(h5readAttributes(h5fl, "foo"), as.character)
-    checkIdentical("integer", foo_ats[["class"]])
-    checkIdentical("INTSXP", foo_ats[["sexptype"]])
-    H5close()
-}
-##test_encode_bookkeeping_primitive()
-
 test_encode_bookkeeping_S3 <- function() {
     df <- .data.frame()
 
@@ -143,9 +134,9 @@ test_encode_bookkeeping_S3 <- function() {
     H5close()
 }
 
-test_encode_bookkeeping_empty_list <- function() {
-    l <- list()
-
+test_encode_bookkeeping_primitive <- function() {
+    ints <- 1:3
+    
     h5fl <- tempfile(fileext=".h5")
     if(interactive())
         message(h5fl)
@@ -154,14 +145,35 @@ test_encode_bookkeeping_empty_list <- function() {
 
     ## create arbitrary H5 object to attach attributes to
     h5createGroup(h5fl, top_name)
-    rhdf5:::encode_bookkeeping(l, h5fl, top_name)
+    rhdf5:::encode_bookkeeping(ints, h5fl, top_name)
     H5close()
 
     foo_ats <- lapply(h5readAttributes(h5fl, "foo"), as.character)
-    checkIdentical("list", foo_ats[["class"]])
-    checkIdentical("VECSXP", foo_ats[["sexptype"]])
+    checkIdentical("integer", foo_ats[["class"]])
+    checkIdentical("INTSXP", foo_ats[["sexptype"]])
     H5close()
 }
+##test_encode_bookkeeping_primitive()
+
+test_encode_primitive <- function() {
+    x <- 1:3
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+
+    rhdf5:::encode(x, h5fl, top_name)
+    H5close()
+
+    checkTrue(.isAbsent(h5fl, "foo/attrs"))
+
+    data_name <- "foo/data/data"
+    data <- as.integer(h5read(h5fl, data_name))
+    checkIdentical(x, data)
+}
+##test_encode_primitive()
 
 test_encode_bookkeeping_NULLobj <- function() {
     x <- NULL
@@ -183,7 +195,6 @@ test_encode_bookkeeping_NULLobj <- function() {
 }
 ##test_encode_bookkeeping_NULLobj()
 
-## ignore bookkeeping (tested separately)
 test_encode_NULLobj <- function() {
     x <- NULL
 
@@ -198,56 +209,162 @@ test_encode_NULLobj <- function() {
     
     ## adapted from h5readAttributes.R
     loc = rhdf5:::h5checktypeOrOpenLoc(h5fl, readonly=TRUE)
-    ## check no data encoded
-    checkTrue(!H5Lexists(loc$H5Identifier, "foo/attrs/data"))
+    ## check no attributes encoded
+    checkTrue(!H5Lexists(loc$H5Identifier, "foo/attrs"))
+    checkTrue(!H5Lexists(loc$H5Identifier, "foo/data"))
     rhdf5:::h5closeitLoc(loc)
-
-    browser()
-    foo_attrs <- lapply(h5readAttributes(h5fl, "foo/attrs"), as.character)
-    checkIdentical("NULL", foo_attrs[["class"]])
-    checkIdentical("NILSXP", foo_attrs[["sexptype"]])
-    
 }
-test_encode_NULLobj()
 
-test_encode_list_with_NULLs <- function() {
-    l <- list(x=1:3, y=NULL, z=NULL)
+test_encode_bookkeeping_empty_list <- function() {
+    l <- list()
 
     h5fl <- tempfile(fileext=".h5")
     if(interactive())
         message(h5fl)
     h5createFile(h5fl)
-    top_name <- "list"
+    top_name <- "foo"
+
+    ## create arbitrary H5 object to attach attributes to
+    h5createGroup(h5fl, top_name)
+    rhdf5:::encode_bookkeeping(l, h5fl, top_name)
+    H5close()
+
+    foo_ats <- lapply(h5readAttributes(h5fl, "foo"), as.character)
+    checkIdentical("list", foo_ats[["class"]])
+    checkIdentical("VECSXP", foo_ats[["sexptype"]])
+    H5close()
+}
+##test_encode_bookkeeping_empty_list()
+
+test_encode_empty_list <- function() {
+    l <- list()
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
 
     rhdf5:::encode(l, h5fl, top_name)
     H5close()
 
-    ## test outer (l)
-    l_ats <- lapply(h5readAttributes(h5fl, "list"), as.character)
-    checkIdentical("list", l_ats[["class"]])
-    checkIdentical("VECSXP", l_ats[["sexptype"]])
+    checkTrue(.isAbsent(h5fl, "foo/attrs"))
+    checkTrue(.isAbsent(h5fl, "foo/data"))
+}
+##test_encode_empty_list()
+
+test_encode_list_unnamed <- function() {
+    l <- list(1:3, letters[5:7])
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+
+    rhdf5:::encode(l, h5fl, top_name)
+    H5close()
+
+    elt1_data_name <- "foo/data/elt1/data/data"
+    elt1_data <- as.integer(h5read(h5fl, elt1_data_name))
+    checkIdentical(l[[1]], elt1_data)
+    checkTrue(.isAbsent(h5fl, "foo/data/elt1/attrs"))
+
+    elt2_data_name <- "foo/data/elt2/data/data"
+    elt2_data <- as.character(h5read(h5fl, elt2_data_name))
+    checkIdentical(l[[2]], elt2_data)
+    checkTrue(.isAbsent(h5fl, "foo/data/elt2/attrs"))
+
+    ## absence of attributes
+    checkTrue(.isAbsent(h5fl, "foo/attrs"))
+}
+##test_encode_list_unnamed()
+
+test_encode_list_named <- function() {
+    l <- list(y=c("x", ""), z=letters[5:7])
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+
+    rhdf5:::encode(l, h5fl, top_name)
+    H5close()
+
+    elt1_data_name <- "foo/data/elt1/data/data"
+    elt1_data <- as.character(h5read(h5fl, elt1_data_name))
+    checkIdentical(l[[1]], elt1_data)
+
+    elt2_data_name <- "foo/data/elt2/data/data"
+    elt2_data <- as.character(h5read(h5fl, elt2_data_name))
+    checkIdentical(l[[2]], elt2_data)
+
+    names_name <- "foo/attrs/names/data/data"
+    names_data <- as.character(h5read(h5fl, names_name))
+    checkIdentical(names(l), names_data)
+}
+##test_encode_list_named()
+
+test_encode_list_partially_named <- function() {
+    l <- list(y=c("x", ""), letters[1:3])
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+
+    rhdf5:::encode(l, h5fl, top_name)
+    H5close()
+
+    elt1_data_name <- "foo/data/elt1/data/data"
+    elt1_data <- as.character(h5read(h5fl, elt1_data_name))
+    checkIdentical(l[[1]], elt1_data)
+
+    elt2_data_name <- "foo/data/elt2/data/data"
+    elt2_data <- as.character(h5read(h5fl, elt2_data_name))
+    checkIdentical(l[[2]], elt2_data)
+
+    names_name <- "foo/attrs/names/data/data"
+    names_data <- as.character(h5read(h5fl, names_name))
+    checkIdentical(names(l), names_data)
+}
+##test_encode_list_partially_named()
+
+test_encode_list_with_NULLs <- function() {
+    l <- list(x=1:3, y=NULL, NULL)
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+
+    rhdf5:::encode(l, h5fl, top_name)
+    H5close()
+
+    ## test attrs
+    names_name <- "foo/attrs/names/data/data"
+    names_data <- as.character(h5read(h5fl, names_name))
+    checkIdentical(names(l), names_data)
     H5close()
 
     ## test x
-    x_name <- "list/x"
-    x_ats <- lapply(h5readAttributes(h5fl, x_name), as.character)
-    checkIdentical("integer", x_ats[["class"]])
-    checkIdentical("INTSXP", x_ats[["sexptype"]])
-    H5close()
-    x_data_name <- paste(x_name, "data", sep="/")
-    x_data <- as.integer(h5read(h5fl, x_data_name))
+    x_name <- "foo/data/elt1/data/data"
+    x_data <- as.integer(h5read(h5fl, x_name))
     checkIdentical(l[["x"]], x_data)
     H5close()
 
     ## test y
-    y_name <- "list/y"
+    y_name <- "foo/data/elt2"
     y_ats <- lapply(h5readAttributes(h5fl, y_name), as.character)
     checkIdentical("NULL", y_ats[["class"]])
     checkIdentical("NILSXP", y_ats[["sexptype"]])
     H5close()
 
     ## test z
-    z_name <- "list/z"
+    z_name <- "foo/data/elt3"
     z_ats <- lapply(h5readAttributes(h5fl, z_name), as.character)
     checkIdentical("NULL", z_ats[["class"]])
     checkIdentical("NILSXP", z_ats[["sexptype"]])
@@ -272,21 +389,29 @@ test_encode_data.frame <- function() {
     checkIdentical("data.frame", df_ats[["class"]])
     checkIdentical("VECSXP", df_ats[["sexptype"]])
     H5close()
+
+    ## attrs
+    class_name <- "foo/attrs/class/data/data"
+    class_data <- as.character(h5read(h5fl, class_name))
+    checkIdentical(class(df), class_data)
+
+    names_name <- "foo/attrs/names/data/data"
+    names_data <- as.character(h5read(h5fl, names_name))
+    checkIdentical(names(df), names_data)
+
+    row.names_name <- "foo/attrs/row.names/data/data"
+    row.names_data <- as.character(h5read(h5fl, row.names_name))
+    checkIdentical(row.names(df), row.names_data)
+    
     ## y
-    y_name <- "foo/y"
-    y_ats <- lapply(h5readAttributes(h5fl, y_name), as.character)
-    checkIdentical("integer", y_ats[["class"]])
-    checkIdentical("INTSXP", y_ats[["sexptype"]])
-    y_data <- as.integer(h5read(h5fl, "foo/y/data"))
+    y_name <- "foo/data/elt1/data/data"
+    y_data <- as.integer(h5read(h5fl, y_name))
     checkIdentical(df[["y"]], y_data)
     H5close()
+
     ## z
-    z_name <- "foo/z"
-    z_ats <- lapply(h5readAttributes(h5fl, z_name), as.character)
-    H5close()
-    checkIdentical("numeric", z_ats[["class"]])
-    checkIdentical("REALSXP", z_ats[["sexptype"]])
-    z_data <- as.double(h5read(h5fl, "foo/z/data"))
+    z_name <- "foo/data/elt2/data/data"
+    z_data <- as.double(h5read(h5fl, z_name))
     checkIdentical(df[["z"]], z_data)
     H5close()
 }
@@ -310,32 +435,19 @@ test_encode_factor <- function() {
     H5close()
 
     ## data
-    data_name <- paste(top_name, "data", sep="/")
+    data_name <- "foo/data/data"
     data <- as.integer(h5read(h5fl, data_name))
     checkIdentical(as.integer(ff), data)
 
-    ## class attribute encoded as group (has its own class attribute also)
-    class_group_path <- "foo/class"
-    class_ats <- lapply(h5readAttributes(h5fl, class_group_path), as.character)
-    checkIdentical("character", class_ats[["class"]])
-    checkIdentical("STRSXP", class_ats[["sexptype"]])
-    H5close()
-    ## value
-    data_name <- "foo/class/data"
-    data <- as.character(h5read(h5fl, data_name))
-    checkIdentical("factor", data)
+    ## attrs
+    class_name <- "foo/attrs/class/data/data"
+    class_data <- as.character(h5read(h5fl, class_name))
+    checkIdentical("factor", class_data)
     H5close()
 
-    ## levels attribute encoded as group
-    levels_group_path <- "foo/levels"
-    levels_ats <- lapply(h5readAttributes(h5fl, class_group_path), as.character)
-    checkIdentical("character", levels_ats[["class"]])
-    checkIdentical("STRSXP", levels_ats[["sexptype"]])
-    H5close()
-    ## value
-    data_name <- "foo/levels/data"
-    data <- as.character(h5read(h5fl, data_name))
-    checkIdentical(levels(ff), data)
+    levels_name <- "foo/attrs/levels/data/data"
+    levels_data <- as.character(h5read(h5fl, levels_name))
+    checkIdentical(levels(ff), levels_data)
 }
 ##test_encode_factor()
 
@@ -356,32 +468,29 @@ test_encode_matrix <- function() {
     checkIdentical("REALSXP", foo_ats[["sexptype"]])
     H5close()
 
-    ## ## data
-    ## data_name <- paste(top_name, "data", sep="/")
-    ## data <- as.integer(h5read(h5fl, data_name))
-    ## checkIdentical(as.integer(ff), data)
+    ## data
+    data_name <- "foo/data/data"
+    data_data <- as.integer(h5read(h5fl, data_name))
+    checkIdentical(as.integer(mx), data_data)
 
-    ## ## class attribute encoded as group (has its own class attribute also)
-    ## class_group_path <- "foo/class"
-    ## class_ats <- lapply(h5readAttributes(h5fl, class_group_path), as.character)
-    ## checkIdentical("character", class_ats[["class"]])
-    ## checkIdentical("STRSXP", class_ats[["sexptype"]])
-    ## H5close()
-    ## ## value
-    ## data_name <- "foo/class/data"
-    ## data <- as.character(h5read(h5fl, data_name))
-    ## checkIdentical("factor", data)
-    ## H5close()
+    ## dim
+    dim_name <- "foo/attrs/dim/data/data"
+    dim_data <- as.integer(h5read(h5fl, dim_name))
+    checkIdentical(dim(mx), dim_data)
 
-    ## ## levels attribute encoded as group
-    ## levels_group_path <- "foo/levels"
-    ## levels_ats <- lapply(h5readAttributes(h5fl, class_group_path), as.character)
-    ## checkIdentical("character", levels_ats[["class"]])
-    ## checkIdentical("STRSXP", levels_ats[["sexptype"]])
-    ## H5close()
-    ## ## value
-    ## data_name <- "foo/levels/data"
-    ## data <- as.character(h5read(h5fl, data_name))
-    ## checkIdentical(levels(ff), data)
+    ## dimnames:data
+    ##   a
+    dimnames_data_name <- "foo/attrs/dimnames/data/elt1/data/data"
+    dimnames_data <- as.character(h5read(h5fl, dimnames_data_name))
+    checkIdentical(dimnames(mx)[[1]], dimnames_data)
+    ##   b
+    dimnames_data_name <- "foo/attrs/dimnames/data/elt2/data/data"
+    dimnames_data <- as.character(h5read(h5fl, dimnames_data_name))
+    checkIdentical(dimnames(mx)[[2]], dimnames_data)
+
+    ## dimnames::attrs
+    dimnames_names_name <- "foo/attrs/dimnames/attrs/names/data/data"
+    dimnames_names_data <- as.character(h5read(h5fl, dimnames_names_name))
+    checkIdentical(names(dimnames(mx)), dimnames_names_data)
 }
 ##test_encode_matrix()
