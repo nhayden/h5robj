@@ -23,6 +23,12 @@ suppressMessages({
     factor(vals, lvls)
 }
 
+.matrix <- function() {
+    mdat <- matrix(c(1,2,3, 11,12,13), nrow = 2, ncol = 3, byrow = TRUE,
+                   dimnames = list(c("row1", "row2"),
+                     c("C.1", "C.2", "C.3")))
+}
+
 trace(rhdf5:::encode, quote(print(obj)))
 trace(rhdf5:::encode_bookkeeping, quote(print(obj)))
 trace(rhdf5:::encode_list_like, quote(print(obj)))
@@ -305,3 +311,50 @@ test_encode_factor <- function() {
     checkIdentical(levels(ff), data)
 }
 ##test_encode_factor()
+
+test_encode_matrix <- function() {
+    mx <- .matrix()
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+
+    rhdf5:::encode(mx, h5fl, top_name)
+    H5close()
+
+    ## outer attributes
+    foo_ats <- lapply(h5readAttributes(h5fl, top_name), as.character)
+    checkIdentical("matrix", foo_ats[["class"]])
+    checkIdentical("REALSXP", foo_ats[["sexptype"]])
+    H5close()
+
+    ## ## data
+    ## data_name <- paste(top_name, "data", sep="/")
+    ## data <- as.integer(h5read(h5fl, data_name))
+    ## checkIdentical(as.integer(ff), data)
+
+    ## ## class attribute encoded as group (has its own class attribute also)
+    ## class_group_path <- "foo/class"
+    ## class_ats <- lapply(h5readAttributes(h5fl, class_group_path), as.character)
+    ## checkIdentical("character", class_ats[["class"]])
+    ## checkIdentical("STRSXP", class_ats[["sexptype"]])
+    ## H5close()
+    ## ## value
+    ## data_name <- "foo/class/data"
+    ## data <- as.character(h5read(h5fl, data_name))
+    ## checkIdentical("factor", data)
+    ## H5close()
+
+    ## ## levels attribute encoded as group
+    ## levels_group_path <- "foo/levels"
+    ## levels_ats <- lapply(h5readAttributes(h5fl, class_group_path), as.character)
+    ## checkIdentical("character", levels_ats[["class"]])
+    ## checkIdentical("STRSXP", levels_ats[["sexptype"]])
+    ## H5close()
+    ## ## value
+    ## data_name <- "foo/levels/data"
+    ## data <- as.character(h5read(h5fl, data_name))
+    ## checkIdentical(levels(ff), data)
+}
+test_encode_matrix()

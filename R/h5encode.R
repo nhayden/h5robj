@@ -61,9 +61,11 @@ encode_list_like <- function(obj, file, name, ...) {
     ##browser()
     if( !is.list(obj) )
         stop("obj must be list, got '", class(obj), "'")
-    if( !all(names(obj) != ""))
+    ##if( is.null(names(obj)) || any(names(obj) == ""))
+    if( any(names(obj) == "") )
         stop("obj must be named list")
     ## recursively encode each attribute
+    ## XXXX FIX ME: if unnamed, loop executes 0 times, function returns
     for(attr_name in names(obj)) {
         val <- obj[[attr_name]]
         sub_name <- paste(name, attr_name, sep="/")
