@@ -36,7 +36,6 @@ suppressMessages({
 }
 
 ## trace(rhdf5:::encode, quote(print(obj)))
-
 ## trace(rhdf5:::encode_bookkeeping, quote(print(obj)))
 ## trace(rhdf5:::encode_list_like, quote(print(obj)))
 ## trace(rhdf5:::encode.default, browser)
@@ -45,51 +44,69 @@ suppressMessages({
 options(error=recover)
 
 ## XXXX FIX ME: complete
-## test_write_IRanges <- function() {
-##     ir <- .simpleIRanges()
+test_write_IRanges <- function() {
+    ir <- .simpleIRanges()
 
-##     h5fl <- tempfile(fileext=".h5")
-##     if(interactive())
-##         message(h5fl)
-##     h5createFile(h5fl)
-##     top_name <- "foo"
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
     
-##     rhdf5:::encode(ir, h5fl, top_name)
-##     H5close()
+    rhdf5:::encode(ir, h5fl, top_name)
+    H5close()
 
-##     ## test start
-##     path <- paste(top_name, "start", "data", sep="/")
-##     start <- as.integer(h5read(h5fl, path))
-##     checkIdentical(start(ir), start)
-    
-##     ## test width
-##     path <- paste(top_name, "width", "data", sep="/")
-##     width <- as.integer(h5read(h5fl, path))
-##     checkIdentical(width(ir), width)
+    ## ensure no data recorded (since S4)
+    checkTrue(.isAbsent(h5fl, "foo/data"))
 
-##     ## test NAMES
-##     ## XXXX FIX ME: what to do??
-##     path <- paste(top_name, "NAMES", "data", sep="/")
-##     NAMES <- as.name(h5read(h5fl, path))
-##     checkIdentical(as.name('\001NULL\001'), NAMES)
+    attrs <- attributes(ir)
 
-##     ## test elementMetadata / mcols
-##     ## XXXX FIX ME: what to do?
-##     path <- paste(top_name, "elementMetadata", "data", sep="/")
-##     elementMetadata <- as.name(h5read(h5fl, path))
-##     checkIdentical(as.name('\001NULL\001'), elementType)
+    ## attrs:NAMES
+    NAMES_name <- "foo/attrs/NAMES/data/data"
+    NAMES_data <- as.character(h5read(h5fl, NAMES_name))
+    checkIdentical(as.character(attrs[["NAMES"]]), NAMES_data)
 
-##     ## test elementType
-##     path <- paste(top_name, "elementType", "data", sep="/")
-##     elementType <- as.character(h5read(h5fl, path))
-##     checkIdentical(elementType(ir), elementType)
+    ## attrs:class:data
+    class_data_name <- "foo/attrs/class/data/data"
+    class_data_data <- as.character(h5read(h5fl, class_data_name))
+    checkIdentical(as.character(attrs[["class"]]), class_data_data)
 
-##     ## test metadata?
-##     ## XXXX FIX ME: check for absence of dataset called 'metadata'?
+    ## attrs:class:attrs:package:data
+    class_package_name <- "foo/attrs/class/attrs/package/data/data"
+    class_package_data <- as.character(h5read(h5fl, class_package_name))
+    class_attr <- attrs[["class"]]
+    pkg_attr <- attr(class_attr, "package")
+    checkIdentical(pkg_attr, class_package_data)
 
-##     ## test
-    
-## }
+    ## attrs:elementMetadata
+    elMdata_name <- "foo/attrs/elementMetadata/data/data"
+    elMdata_data <- as.character(h5read(h5fl, elMdata_name))
+    checkIdentical(as.character(attrs[["elementMetadata"]]), elMdata_data)
+
+    ## attrs:elementType
+    elType_name <- "foo/attrs/elementType/data/data"
+    elType_data <- as.character(h5read(h5fl, elType_name))
+    checkIdentical(as.character(attrs[["elementType"]]), elType_data)
+
+    ## attrs:metadata
+    ## FIX ME: questionable; since zero-length list, encoded only bookkeping
+    metadata_name <- "foo/attrs/metadata"
+    metadata_ats <- lapply(h5readAttributes(h5fl, metadata_name), as.character)
+    checkIdentical("list", metadata_ats[["class"]])
+    checkIdentical("VECSXP", metadata_ats[["sexptype"]])
+    checkTrue(.isAbsent(h5fl, "foo/attrs/metadata/data"))
+    checkTrue(.isAbsent(h5fl, "foo/attrs/metadata/attrs"))
+
+    ## attrs:start
+    start_name <- "foo/attrs/start/data/data"
+    start_data <- as.integer(h5read(h5fl, start_name))
+    checkIdentical(attrs[["start"]], start_data)
+
+    ## attrs:width
+    width_name <- "foo/attrs/width/data/data"
+    width_data <- as.integer(h5read(h5fl, width_name))
+    checkIdentical(attrs[["width"]], width_data)
+}
 ##test_write_IRanges()
 
 test_encode_bookkeeping_S4 <- function() {
@@ -175,6 +192,45 @@ test_encode_primitive <- function() {
 }
 ##test_encode_primitive()
 
+test_encode_bookkeeping_SYMSXP <- function() {
+    n <- as.name('\001NULL\001')
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+
+    h5createGroup(h5fl, top_name)
+    rhdf5:::encode_bookkeeping(n, h5fl, top_name)
+    H5close()
+
+    foo_ats <- lapply(h5readAttributes(h5fl, "foo"), as.character)
+    checkIdentical("name", foo_ats[["class"]])
+    checkIdentical("SYMSXP", foo_ats[["sexptype"]])
+    H5close()
+}
+##test_encode_bookkeeping_SYMSXP()
+
+test_encode_SYMSXP <- function() {
+    n <- as.name('\001NULL\001')
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+
+    rhdf5:::encode(n, h5fl, top_name)
+    H5close()
+
+    checkTrue(.isAbsent(h5fl, "foo/attrs"))
+    data_name <- "foo/data/data"
+    data <- as.character(h5read(h5fl, data_name))
+    checkIdentical(as.character(n), data)
+}
+##test_encode_SYMSXP()
+
 test_encode_bookkeeping_NULLobj <- function() {
     x <- NULL
 
@@ -207,12 +263,8 @@ test_encode_NULLobj <- function() {
     rhdf5:::encode(x, h5fl, top_name)
     H5close()
     
-    ## adapted from h5readAttributes.R
-    loc = rhdf5:::h5checktypeOrOpenLoc(h5fl, readonly=TRUE)
-    ## check no attributes encoded
-    checkTrue(!H5Lexists(loc$H5Identifier, "foo/attrs"))
-    checkTrue(!H5Lexists(loc$H5Identifier, "foo/data"))
-    rhdf5:::h5closeitLoc(loc)
+    checkTrue(.isAbsent(h5fl, "foo/attrs"))
+    checkTrue(.isAbsent(h5fl, "foo/data"))
 }
 
 test_encode_bookkeeping_empty_list <- function() {
