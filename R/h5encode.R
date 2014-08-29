@@ -9,7 +9,6 @@ h5type <- function(x) {
 }
 
 encode_bookkeeping <- function(obj, file, name, ...) {
-    message("encode_bookkeeping!")
     fid <- H5Fopen(file)
     oid <- H5Oopen(fid, name)
     ## XXXX FIX ME: encode package as NULL in non-S4 cases?
@@ -63,7 +62,6 @@ encode_data <- function(obj, file, name, ...) {
 }
 
 encode_list_like <- function(obj, file, name, must.use.names=FALSE, ...) {
-    message("encode_list_like!")
     if( !is.list(obj) )
         stop("'obj' must be list, got '", class(obj), "'")
     if(must.use.names && is.null(names(obj)))
@@ -82,14 +80,12 @@ encode_list_like <- function(obj, file, name, must.use.names=FALSE, ...) {
 }
 
 encode.name <- function(obj, file, name, ...) {
-    message("encode.name!")
     data_name <- paste(name, "data", sep="/")
     attributes(obj) <- NULL
     h5write(as.character(obj), file, data_name, ...)
 }
 
 encode.default <- function(obj, file, name, ...) {
-    message("encode.default!")
     data_name <- paste(name, "data", sep="/")
     ## expose raw "nugget"
     attributes(obj) <- NULL

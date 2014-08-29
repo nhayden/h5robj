@@ -43,7 +43,6 @@ suppressMessages({
 ## trace(rhdf5:::encode_data, browser)
 options(error=recover)
 
-## XXXX FIX ME: complete
 test_write_IRanges <- function() {
     ir <- .simpleIRanges()
 
