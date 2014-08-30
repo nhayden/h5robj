@@ -43,7 +43,7 @@ suppressMessages({
 ## trace(rhdf5:::encode_data, browser)
 options(error=recover)
 
-test_write_IRanges <- function() {
+test_encode_IRanges <- function() {
     ir <- .simpleIRanges()
 
     h5fl <- tempfile(fileext=".h5")
@@ -106,7 +106,7 @@ test_write_IRanges <- function() {
     width_data <- as.integer(h5read(h5fl, width_name))
     checkIdentical(attrs[["width"]], width_data)
 }
-##test_write_IRanges()
+##test_encode_IRanges()
 
 test_encode_bookkeeping_S4 <- function() {
     ir <- IRanges()
