@@ -179,6 +179,23 @@ test_decode_matrix <- function() {
 }
 ##test_decode_matrix()
 
+test_decode_SYMSXP <- function() {
+    n <- as.name("\001NULL\001")
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+
+    rhdf5:::encode(n, h5fl, top_name)
+    H5close()
+
+    res <- rhdf5:::decode(h5fl, top_name)
+    checkIdentical(n, res)
+}
+##test_decode_SYMSXP()
+
 test_decode_IRanges <- function() {
     ir <- .simpleIRanges()
 

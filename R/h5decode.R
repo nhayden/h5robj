@@ -25,10 +25,14 @@ decode_S3 <- function(file, name, bookkeeping) {
         stop("decoding S3 for type '", cl_name, "' not implemented")
     }
     proto_obj <- NULL
-    if(cl_name %in% .classless_types)
+    if(cl_name == "name") {
+        ## R's pseudo NULL object
+        proto_obj <- as.name('\001NULL\001')
+    } else if(cl_name %in% .classless_types) {
         proto_obj <- vector(nugget_sexptype)
-    else
+    } else {
         proto_obj <- structure(vector(nugget_sexptype), class=cl_name)
+    }
     .decode(proto_obj, file, name, bookkeeping)
 }
 
@@ -77,6 +81,19 @@ decode_attrs <- function(file, name, bookkeeping, ...) {
     } else {
         decode_list_like(file, attrs_name, retain.names=TRUE, ...)
     }
+}
+
+.decode.name <- function(obj, file, name, bookkeeping, ...) {
+    attrs <- decode_attrs(file, name, ...)
+    data <- decode_data(file, name, bookkeeping, ...)
+
+    if(is.null(data))
+        return(obj)
+    ## coerce character to name
+    data <- as.name(data)
+    if(!is.null(attrs))
+        attributes(data) <- attrs
+    data
 }
 
 .decode.default <- function(obj, file, name, bookkeeping, ...) {
