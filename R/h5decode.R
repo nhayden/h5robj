@@ -120,7 +120,9 @@ decode_S4 <- function(file, name, bookkeeping)
 
     ## read attributes other than 'class'
     attrs <- decode_attrs(file, name) ## list
-    
+    ## drop class attribute so it doesn't get reassigned
+    attrs[["class"]] <- NULL
+
     ## initialize with initialize,ANY-method
     initANY <- getMethod(initialize, "ANY")
     proto_obj <- .Call(methods:::C_new_object, class_def)

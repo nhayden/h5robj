@@ -246,11 +246,12 @@ test_decode_IRanges <- function() {
     res <- rhdf5:::decode(h5fl, top_name)
     browser()
 }
-##test_decode_IRanges()
+test_decode_IRanges()
 
+## a very simple S4 object
+## FIX ME: use something in infrastructure package
 test_decode_PileupParam <- function() {
-    library(Rsamtools)
-    pp <- PileupParam()
+    pp <- Rsamtools:::PileupParam()
 
     h5fl <- tempfile(fileext=".h5")
     if(interactive())
@@ -262,7 +263,7 @@ test_decode_PileupParam <- function() {
     H5close()
 
     res <- rhdf5:::decode(h5fl, top_name)
-    browser()
+    checkIdentical(pp, res)
 }
 ##test_decode_PileupParam()
 
