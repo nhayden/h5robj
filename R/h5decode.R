@@ -109,10 +109,15 @@ decode_attrs <- function(file, name, bookkeeping, ...) {
     data
 }
 
+.psuedoNULL <- as.name("\001NULL\001")
+## identical(.psuedoNULL, methods:::.psuedoNULL)
+
 decode_S4 <- function(file, name, bookkeeping)
 {
     pkg <- bookkeeping[["package"]]
-    nmspc <- loadNamespace(pkg)
+    nmspc <- if (identical(pkg, ".GlobalEnv")) {
+        .GlobalEnv
+    } else loadNamespace(pkg)
     class_name <- bookkeeping[["class"]]
     class_def <- getClass(class_name, where=nmspc)
     if (!identical(pkg, attr(class_def@className, "package")))
@@ -122,9 +127,10 @@ decode_S4 <- function(file, name, bookkeeping)
     attrs <- decode_attrs(file, name) ## list
     ## drop class attribute so it doesn't get reassigned
     attrs[["class"]] <- NULL
+    attrs <- attrs[!sapply(attrs, identical, as.name("\001NULL\001"))]
 
     ## initialize with initialize,ANY-method
     initANY <- getMethod(initialize, "ANY")
     proto_obj <- .Call(methods:::C_new_object, class_def)
-    do.call(initANY, c(proto_obj, attrs))
+    do.call(initANY, c(list(proto_obj), attrs))
 }

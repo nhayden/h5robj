@@ -245,8 +245,9 @@ test_decode_IRanges <- function() {
 
     res <- rhdf5:::decode(h5fl, top_name)
     browser()
+    checkIdentical(ir, res)
 }
-test_decode_IRanges()
+##test_decode_IRanges()
 
 ## a very simple S4 object
 ## FIX ME: use something in infrastructure package
@@ -267,20 +268,20 @@ test_decode_PileupParam <- function() {
 }
 ##test_decode_PileupParam()
 
-## test_decode_adhocS4 <- function() {
-##     setClass("A", representation(a="integer", b="character"))
-##     a <- new("A")
+test_decode_adhocS4 <- function() {
+    setClass("A", representation(a="integer", b="character"))
+    a <- new("A")
 
-##     h5fl <- tempfile(fileext=".h5")
-##     if(interactive())
-##         message(h5fl)
-##     h5createFile(h5fl)
-##     top_name <- "foo"
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
 
-##     rhdf5:::encode(a, h5fl, top_name)
-##     H5close()
+    rhdf5:::encode(a, h5fl, top_name)
+    H5close()
 
-##     res <- rhdf5:::decode(h5fl, top_name)
-##     browser()
-## }
-## test_decode_adhocS4()
+    res <- rhdf5:::decode(h5fl, top_name)
+    browser()
+}
+test_decode_adhocS4()
