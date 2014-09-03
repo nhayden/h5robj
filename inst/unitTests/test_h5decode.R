@@ -43,6 +43,23 @@ test_h5ls_immediate_descendants <- function() {
 ##trace(rhdf5:::decode_S3, browser)
 ##trace(rhdf5:::decode_attrs, browser)
 
+test_decode_NULLobj <- function() {
+    x <- NULL
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+
+    rhdf5:::encode(x, h5fl, top_name)
+    H5close()
+    
+    res <- rhdf5:::decode(h5fl, top_name)
+    checkIdentical(x, res)
+}
+##test_decode_NULLobj()
+
 test_decode_primitive <- function() {
     ints <- 1:3
 
@@ -212,3 +229,39 @@ test_decode_IRanges <- function() {
     browser()
 }
 ##test_decode_IRanges()
+
+test_decode_PileupParam <- function() {
+    library(Rsamtools)
+    pp <- PileupParam()
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+
+    rhdf5:::encode(pp, h5fl, top_name)
+    H5close()
+
+    res <- rhdf5:::decode(h5fl, top_name)
+    browser()
+}
+##test_decode_PileupParam()
+
+## test_decode_adhocS4 <- function() {
+##     setClass("A", representation(a="integer", b="character"))
+##     a <- new("A")
+
+##     h5fl <- tempfile(fileext=".h5")
+##     if(interactive())
+##         message(h5fl)
+##     h5createFile(h5fl)
+##     top_name <- "foo"
+
+##     rhdf5:::encode(a, h5fl, top_name)
+##     H5close()
+
+##     res <- rhdf5:::decode(h5fl, top_name)
+##     browser()
+## }
+## test_decode_adhocS4()

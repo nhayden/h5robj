@@ -25,7 +25,9 @@ decode_S3 <- function(file, name, bookkeeping) {
         stop("decoding S3 for type '", cl_name, "' not implemented")
     }
     proto_obj <- NULL
-    if(cl_name == "name") {
+    if(cl_name == "NULL") {
+        return(proto_obj)
+    } else if(cl_name == "name") { ## 'name' / 'symbol'
         ## R's pseudo NULL object
         proto_obj <- as.name('\001NULL\001')
     } else if(cl_name %in% .classless_types) {
