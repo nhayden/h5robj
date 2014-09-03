@@ -60,6 +60,24 @@ test_decode_NULLobj <- function() {
 }
 ##test_decode_NULLobj()
 
+## needed to ensure 'numeric' vs. 'double' is used correctly in decoding
+test_decode_zero_length_numeric <- function() {
+    nums <- vector('numeric')
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+
+    rhdf5:::encode(nums, h5fl, top_name)
+    H5close()
+
+    res <- rhdf5:::decode(h5fl, top_name)
+    checkIdentical(nums, res)
+}
+##test_decode_zero_length_numeric()
+
 test_decode_primitive <- function() {
     ints <- 1:3
 

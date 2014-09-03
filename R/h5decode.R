@@ -30,7 +30,7 @@ decode_S3 <- function(file, name, bookkeeping) {
     } else if(cl_name == "name") { ## 'name' / 'symbol'
         ## R's pseudo NULL object
         proto_obj <- as.name('\001NULL\001')
-    } else if(cl_name %in% .classless_types) {
+    } else if(nugget_sexptype %in% .classless_types) {
         proto_obj <- vector(nugget_sexptype)
     } else {
         proto_obj <- structure(vector(nugget_sexptype), class=cl_name)
