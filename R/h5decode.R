@@ -8,7 +8,7 @@ decode <- function(file, name, ...) {
     bkk <- decode_bookkeeping(file, name, ...)
     bkk_names <- names(bkk)
     if( !("class" %in% bkk_names) || !("sexptype" %in% bkk_names) )
-        stop("Can't decode; missing bookkeeping information")
+        stop("Can't decode; missing bookkeeping information in file")
     if( bkk[["sexptype"]] == "S4SXP" && !("package" %in% bkk_names) )
         stop("Can't decode; S4 object without package information")
 
@@ -20,32 +20,77 @@ decode <- function(file, name, ...) {
 
 decode_S3 <- function(file, name, bookkeeping) {
     cl_name <- bookkeeping[["class"]]
-    if(cl_name == "factor") {
-        proto_obj <- structure(integer(), cl_name)
-    } else {
-        proto_obj <- structure(list(), cl_name)
+    nugget_sexptype <- Rtype(bookkeeping[["sexptype"]])
+    if( !(nugget_sexptype %in% .classless_types) ) {
+        stop("decoding S3 for type '", cl_name, "' not implemented")
     }
-    .decode(proto_obj, file, name)
+    proto_obj <- NULL
+    if(cl_name %in% .classless_types)
+        proto_obj <- structure(vector(nugget_sexptype))
+    else
+        proto_obj <- structure(vector(nugget_sexptype), class=cl_name)
+    .decode(proto_obj, file, name, bookkeeping)
 }
 
-.decode <- function(obj, file, name, ...) {
+.decode <- function(obj, file, name, bookkeeping, ...) {
     UseMethod(".decode")
 }
 
-.decode.default <- function(obj, file, name, ...) {
-    message("decode.default!")
+decode_list_like <- function(file, name, ...) {
+    list_elts <- h5ls_immeditate_descendants(file, name)
+    res <- vector('list', length(list_elts))
+    ## names will be overwritten if names attributes is associated with obj
+    names(res) <- infer_list_names(list_elts)
+    for(i in seq_along(list_elts)) {
+        res[[i]] <- decode(file, list_elts[[i]], ...)
+    }
+    res
+}
 
-    attrs <- decode_atttrs(file, name)
-    data <- decode_data(file, name)
+read_nugget <- function(file, name, bookkeeping, ...) {
+    nugget_name <- paste(name, "data", sep="/")
+    if(!h5exists(file, nugget_name))
+        stop("data nugget for '", name, "' does not exist in file")
+    as.vector(h5read(file, nugget_name))
+}
 
-    attributes(data) <- attrs
+decode_data <- function(file, name, bookkeeping, ...) {
+    data_name <- paste(name, "data", sep="/")
+    if(!h5exists(file, data_name)) {
+        NULL
+    } else {
+        if(bookkeeping[["sexptype"]] == "VECSXP") {
+            decode_list_like(file, data_name, ...)
+        } else {
+            read_nugget(file, data_name, bookkeeping, ...)
+        }
+    }
+}
+
+decode_attrs <- function(file, name, bookkeeping, ...) {
+    attrs_name <- paste(name, "attrs", sep="/")
+    if(!h5exists(file, attrs_name)) {
+        NULL
+    } else {
+        decode_list_like(file, attrs_name, ...)
+    }
+}
+
+.decode.default <- function(obj, file, name, bookkeeping, ...) {
+    attrs <- decode_attrs(file, name, ...)
+    data <- decode_data(file, name, bookkeeping, ...)
+
+    if(is.null(data))
+        return(obj)
+    if(!is.null(attrs))
+        attributes(data) <- attrs
     data
 }
 
 decode_S4 <- function(file, name, bookkeeping)
 {
     pkg <- bookkeeping[["package"]]
-    nmspc <- loadNamespace(pkg) ## changed from if(!requireNamespace())
+    nmspc <- loadNamespace(pkg)
     class_name <- bookkeeping[["class"]]
     class_def <- getClass(class_name, where=nmspc)
     if (!identical(pkg, attr(class_def@className, "package")))

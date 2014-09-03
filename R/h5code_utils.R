@@ -64,3 +64,9 @@ h5ls_immeditate_descendants <- function(file, name) {
     matches_lens <- lapply(strsplit(matches, "/"), length)
     imm_descendants <- matches[matches_lens == (input_depth + 1)]
 }
+
+infer_list_names <- function(paths) {
+    if(is.null(paths) || length(paths) == 0L)
+        stop("paths must be non-zero")
+    basename(paths)
+}
