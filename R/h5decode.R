@@ -9,10 +9,11 @@ decode <- function(file, name, ...) {
     bkk_names <- names(bkk)
     if( !("class" %in% bkk_names) || !("sexptype" %in% bkk_names) )
         stop("Can't decode; missing bookkeeping information in file")
+    ## XXXX FIX ME: is there a way to double-check is S4 without S4 bit?
     if( bkk[["sexptype"]] == "S4SXP" && !("package" %in% bkk_names) )
         stop("Can't decode; S4 object without package information")
 
-    if(bkk[["sexptype"]] == "S4SXP")
+    if("package" %in% bkk_names)
         decode_S4(file, name, bkk)
     else
         decode_S3(file, name, bkk)
@@ -108,9 +109,6 @@ decode_attrs <- function(file, name, bookkeeping, ...) {
         attributes(data) <- attrs
     data
 }
-
-.psuedoNULL <- as.name("\001NULL\001")
-## identical(.psuedoNULL, methods:::.psuedoNULL)
 
 decode_S4 <- function(file, name, bookkeeping)
 {

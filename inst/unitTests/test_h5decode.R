@@ -252,7 +252,6 @@ test_decode_IRanges <- function() {
     H5close()
 
     res <- rhdf5:::decode(h5fl, top_name)
-    browser()
     checkIdentical(ir, res)
 }
 ##test_decode_IRanges()
@@ -285,31 +284,29 @@ test_decode_adhocS4_ISA_basetype <- function() {
         message(h5fl)
     h5createFile(h5fl)
     top_name <- "foo"
-    ##trace(rhdf5:::encode.default, browser)
     rhdf5:::encode(a, h5fl, top_name)
     H5close()
 
     res <- rhdf5:::decode(h5fl, top_name)
-    ##browser()
     checkIdentical(a, res)
+    browser()
 }
-##test_decode_adhocS4_ISA_basetype()
+test_decode_adhocS4_ISA_basetype()
 
 test_decode_adhocS4_HASA_basetype <- function() {
     .A = setClass("A", representation(a="integer"))
-    a <- .A(1:5)
+    a <- .A(a=1:5)
 
     h5fl <- tempfile(fileext=".h5")
     if(interactive())
         message(h5fl)
     h5createFile(h5fl)
     top_name <- "foo"
-    ##trace(rhdf5:::encode.default, browser)
+    
     rhdf5:::encode(a, h5fl, top_name)
     H5close()
 
     res <- rhdf5:::decode(h5fl, top_name)
-    ##browser()
     checkIdentical(a, res)
 }
 ##test_decode_adhocS4_HASA_basetype()

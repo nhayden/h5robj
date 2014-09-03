@@ -27,14 +27,6 @@ suppressMessages({
     mdat <- matrix(1, dimnames=list("a", Col="b"))
 }
 
-## only expected to work for datasets and groups
-.isAbsent <- function(file, name) {
-    loc = rhdf5:::h5checktypeOrOpenLoc(file, readonly=TRUE)
-    res <- !H5Lexists(loc$H5Identifier, name)
-    rhdf5:::h5closeitLoc(loc)
-    res
-}
-
 ## trace(rhdf5:::encode, quote(print(obj)))
 ## trace(rhdf5:::encode_bookkeeping, quote(print(obj)))
 ## trace(rhdf5:::encode_list_like, quote(print(obj)))
@@ -55,8 +47,8 @@ test_encode_IRanges <- function() {
     rhdf5:::encode(ir, h5fl, top_name)
     H5close()
 
-    ## ensure no data recorded (since S4)
-    checkTrue(.isAbsent(h5fl, "foo/data"))
+    ## ensure no data recorded (since a no-data S4)
+    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/data"))
 
     attrs <- attributes(ir)
 
@@ -88,13 +80,12 @@ test_encode_IRanges <- function() {
     checkIdentical(as.character(attrs[["elementType"]]), elType_data)
 
     ## attrs:metadata
-    ## FIX ME: questionable; since zero-length list, encoded only bookkeping
     metadata_name <- "foo/attrs/metadata"
     metadata_ats <- lapply(h5readAttributes(h5fl, metadata_name), as.character)
     checkIdentical("list", metadata_ats[["class"]])
     checkIdentical("VECSXP", metadata_ats[["sexptype"]])
-    checkTrue(.isAbsent(h5fl, "foo/attrs/metadata/data"))
-    checkTrue(.isAbsent(h5fl, "foo/attrs/metadata/attrs"))
+    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/attrs/metadata/data"))
+    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/attrs/metadata/attrs"))
 
     ## attrs:start
     start_name <- "foo/attrs/start/data/data"
@@ -107,6 +98,63 @@ test_encode_IRanges <- function() {
     checkIdentical(attrs[["width"]], width_data)
 }
 ##test_encode_IRanges()
+
+test_encode_adhocS4_HASA_basetype <- function() {
+    .A = setClass("A", representation(z="integer"))
+    a <- .A(z=1:5)
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+    
+    rhdf5:::encode(a, h5fl, top_name)
+    H5close()
+
+    ## ensure no data recorded (since a no-data S4)
+    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/data"))
+
+    attrs <- attributes(a)
+
+    ## check bookkeeping for adhoc S4 class
+    bk_ats <- lapply(h5readAttributes(h5fl, "foo"), as.character)
+    checkIdentical("A", bk_ats[["class"]])
+    checkIdentical(".GlobalEnv", bk_ats[["package"]])
+    checkIdentical("S4SXP", bk_ats[["sexptype"]])
+
+    ## slot 'z' data
+    z_name <- "foo/attrs/z/data/data"
+    z_data <- as.integer(h5read(h5fl, z_name))
+    checkIdentical(a@z, z_data)    
+}
+##test_encode_adhocS4_HASA_basetype()
+
+test_encode_adhocS4_ISA_basetype <- function() {
+    .A = setClass("A", contains="integer")
+    a <- .A(1:5)
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+    ##trace(rhdf5:::encode.default, browser)
+    rhdf5:::encode(a, h5fl, top_name)
+    H5close()
+
+    attrs <- attributes(a)
+
+    ## check bookkeeping for adhoc S4 class
+    bk_ats <- lapply(h5readAttributes(h5fl, "foo"), as.character)
+    checkIdentical("A", bk_ats[["class"]])
+    checkIdentical(".GlobalEnv", bk_ats[["package"]])
+    checkIdentical("INTSXP", bk_ats[["sexptype"]])
+
+    data_name <- "foo/data/data"
+    checkIdentical(slot(a, ".Data"), as.integer(h5read(h5fl, data_name)))
+}
+##test_encode_adhocS4_ISA_basetype()
 
 test_encode_bookkeeping_S4 <- function() {
     ir <- IRanges()
@@ -183,7 +231,7 @@ test_encode_primitive <- function() {
     rhdf5:::encode(x, h5fl, top_name)
     H5close()
 
-    checkTrue(.isAbsent(h5fl, "foo/attrs"))
+    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/attrs"))
 
     data_name <- "foo/data/data"
     data <- as.integer(h5read(h5fl, data_name))
@@ -223,7 +271,7 @@ test_encode_SYMSXP <- function() {
     rhdf5:::encode(n, h5fl, top_name)
     H5close()
 
-    checkTrue(.isAbsent(h5fl, "foo/attrs"))
+    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/attrs"))
     data_name <- "foo/data/data"
     data <- as.character(h5read(h5fl, data_name))
     checkIdentical(as.character(n), data)
@@ -262,9 +310,10 @@ test_encode_NULLobj <- function() {
     rhdf5:::encode(x, h5fl, top_name)
     H5close()
     
-    checkTrue(.isAbsent(h5fl, "foo/attrs"))
-    checkTrue(.isAbsent(h5fl, "foo/data"))
+    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/attrs"))
+    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/data"))
 }
+##test_encode_NULLobj()
 
 test_encode_bookkeeping_empty_list <- function() {
     l <- list()
@@ -299,8 +348,8 @@ test_encode_empty_list <- function() {
     rhdf5:::encode(l, h5fl, top_name)
     H5close()
 
-    checkTrue(.isAbsent(h5fl, "foo/attrs"))
-    checkTrue(.isAbsent(h5fl, "foo/data"))
+    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/attrs"))
+    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/data"))
 }
 ##test_encode_empty_list()
 
@@ -319,15 +368,15 @@ test_encode_list_unnamed <- function() {
     elt1_data_name <- "foo/data/elt1/data/data"
     elt1_data <- as.integer(h5read(h5fl, elt1_data_name))
     checkIdentical(l[[1]], elt1_data)
-    checkTrue(.isAbsent(h5fl, "foo/data/elt1/attrs"))
+    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/data/elt1/attrs"))
 
     elt2_data_name <- "foo/data/elt2/data/data"
     elt2_data <- as.character(h5read(h5fl, elt2_data_name))
     checkIdentical(l[[2]], elt2_data)
-    checkTrue(.isAbsent(h5fl, "foo/data/elt2/attrs"))
+    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/data/elt2/attrs"))
 
     ## absence of attributes
-    checkTrue(.isAbsent(h5fl, "foo/attrs"))
+    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/attrs"))
 }
 ##test_encode_list_unnamed()
 

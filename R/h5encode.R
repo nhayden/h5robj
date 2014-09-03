@@ -11,7 +11,6 @@ h5type <- function(x) {
 encode_bookkeeping <- function(obj, file, name, ...) {
     fid <- H5Fopen(file)
     oid <- H5Oopen(fid, name)
-    ## XXXX FIX ME: encode package as NULL in non-S4 cases?
     if(isS4(obj)) {
         if(is.null(attr(class(obj), "package")))
             stop("cannot encode: package attribute required on",
@@ -20,7 +19,6 @@ encode_bookkeeping <- function(obj, file, name, ...) {
     }
     h5writeAttribute(as.character(class(obj)), oid, "class")
     h5writeAttribute(h5type(obj), oid, "sexptype")
-
     H5close()
 }
 
@@ -42,18 +40,16 @@ encode_attrs <- function(obj, file, name, ...) {
     if(is.null(obj) || is.null(attributes(obj)))
         return()
     attrs_name <- paste(name, "attrs", sep="/")
-    h5createGroup(file, attrs_name)
-    ##encode_data(attributes(obj), file, attrs_name, ...)
     encode_list_like(attributes(obj), file, attrs_name,
                      must.use.names=TRUE, ...)
 }
 
 encode_data <- function(obj, file, name, ...) {
-    ## S4 objects are attribute-only
-    if(is.null(obj) || isS4(obj))
+    if(is.null(obj))
         return()
     data_name <- paste(name, "data", sep="/")
-    h5createGroup(file, data_name)
+    ## XXXX FIX ME: how to neatly decompose data and attrs?
+    attributes(obj) <- NULL
     if(is.recursive(obj)) {
         encode_list_like(obj, file, data_name, ...)
     } else {
@@ -62,10 +58,11 @@ encode_data <- function(obj, file, name, ...) {
 }
 
 encode_list_like <- function(obj, file, name, must.use.names=FALSE, ...) {
-    if( !is.list(obj) )
-        stop("'obj' must be list, got '", class(obj), "'")
+    if( !is.list(obj) || length(obj) == 0L )
+        stop("'obj' must be a non-zero length list, got '", class(obj), "'")
     if(must.use.names && is.null(names(obj)))
         stop("must.use.names TRUE, but no names attribute")
+    h5createGroup(file, name)
 
     ## recursively encode each attribute in separate GROUP
     group_names <- list()
@@ -80,14 +77,19 @@ encode_list_like <- function(obj, file, name, must.use.names=FALSE, ...) {
 }
 
 encode.name <- function(obj, file, name, ...) {
+    if(is.null(obj))
+        return()
+    h5createGroup(file, name)
     data_name <- paste(name, "data", sep="/")
-    attributes(obj) <- NULL
     h5write(as.character(obj), file, data_name, ...)
 }
 
 encode.default <- function(obj, file, name, ...) {
+    ## XXXX FIX ME: shouldn't have to know about "S4" class, which
+    ## represents an empty obj with the S4 bit set
+    if(is.null(obj) || class(obj) == "S4")
+        return()
+    h5createGroup(file, name)
     data_name <- paste(name, "data", sep="/")
-    ## expose raw "nugget"
-    attributes(obj) <- NULL
     h5write(obj, file, data_name, ...)
 }
