@@ -21,6 +21,14 @@ options(error=recover)
     IRanges(Rle(1:30) %% 5 <= 2)
 }
 
+## verify that `\001NULL\001` is the representation used by
+## methods:::.pseudoNULL for the pseudoNULL object; pseudoNULL is used
+## as a placeholder symbol for *ORNULL slots in S4 objects
+test_pseudoNULL_represenation <- function() {
+    checkIdentical(rhdf5:::.pseudoNULL, methods:::.pseudoNULL)
+}
+##test_pseudoNULL_represenation()
+
 test_h5ls_immediate_descendants <- function() {
     ff <- .factor()
 
@@ -268,20 +276,40 @@ test_decode_PileupParam <- function() {
 }
 ##test_decode_PileupParam()
 
-test_decode_adhocS4 <- function() {
-    setClass("A", representation(a="integer", b="character"))
-    a <- new("A")
+test_decode_adhocS4_ISA_basetype <- function() {
+    .A = setClass("A", contains="integer")
+    a <- .A(1:5)
 
     h5fl <- tempfile(fileext=".h5")
     if(interactive())
         message(h5fl)
     h5createFile(h5fl)
     top_name <- "foo"
-
+    ##trace(rhdf5:::encode.default, browser)
     rhdf5:::encode(a, h5fl, top_name)
     H5close()
 
     res <- rhdf5:::decode(h5fl, top_name)
-    browser()
+    ##browser()
+    checkIdentical(a, res)
 }
-test_decode_adhocS4()
+##test_decode_adhocS4_ISA_basetype()
+
+test_decode_adhocS4_HASA_basetype <- function() {
+    .A = setClass("A", representation(a="integer"))
+    a <- .A(1:5)
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+    ##trace(rhdf5:::encode.default, browser)
+    rhdf5:::encode(a, h5fl, top_name)
+    H5close()
+
+    res <- rhdf5:::decode(h5fl, top_name)
+    ##browser()
+    checkIdentical(a, res)
+}
+##test_decode_adhocS4_HASA_basetype()

@@ -17,6 +17,9 @@ h5exists <- function(file, name) {
 .classless_types <- c("logical", "integer", "double", "character", "raw",
                       "list", "NULL", "symbol")
 
+## representation of placeholder symbol for *ORNULL slots on S4 objs
+.pseudoNULL <- as.name("\001NULL\001")
+
 h5type <- function(x) {
     switch(typeof(x),
            ## primitives

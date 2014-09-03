@@ -123,14 +123,11 @@ decode_S4 <- function(file, name, bookkeeping)
     if (!identical(pkg, attr(class_def@className, "package")))
         stop("class '", class_name, "' not defined in package '", pkg, "'")
 
-    ## read attributes other than 'class'
     attrs <- decode_attrs(file, name) ## list
-    ## drop class attribute so it doesn't get reassigned
-    attrs[["class"]] <- NULL
-    attrs <- attrs[!sapply(attrs, identical, as.name("\001NULL\001"))]
 
     ## initialize with initialize,ANY-method
     initANY <- getMethod(initialize, "ANY")
     proto_obj <- .Call(methods:::C_new_object, class_def)
-    do.call(initANY, c(list(proto_obj), attrs))
+    attributes(proto_obj) <- attrs
+    proto_obj
 }
