@@ -26,7 +26,7 @@ decode_S3 <- function(file, name, bookkeeping) {
     }
     proto_obj <- NULL
     if(cl_name %in% .classless_types)
-        proto_obj <- structure(vector(nugget_sexptype))
+        proto_obj <- vector(nugget_sexptype)
     else
         proto_obj <- structure(vector(nugget_sexptype), class=cl_name)
     .decode(proto_obj, file, name, bookkeeping)
@@ -36,11 +36,14 @@ decode_S3 <- function(file, name, bookkeeping) {
     UseMethod(".decode")
 }
 
-decode_list_like <- function(file, name, ...) {
+decode_list_like <- function(file, name, retain.names=FALSE, ...) {
     list_elts <- h5ls_immeditate_descendants(file, name)
     res <- vector('list', length(list_elts))
-    ## names will be overwritten if names attributes is associated with obj
-    names(res) <- infer_list_names(list_elts)
+    if(retain.names) {
+        ## FIX ME: include check that names attribute exists in H5?
+        ## names will be overwritten if names attributes is associated with obj
+        names(res) <- infer_list_names(list_elts)
+    }
     for(i in seq_along(list_elts)) {
         res[[i]] <- decode(file, list_elts[[i]], ...)
     }
@@ -72,7 +75,7 @@ decode_attrs <- function(file, name, bookkeeping, ...) {
     if(!h5exists(file, attrs_name)) {
         NULL
     } else {
-        decode_list_like(file, attrs_name, ...)
+        decode_list_like(file, attrs_name, retain.names=TRUE, ...)
     }
 }
 
