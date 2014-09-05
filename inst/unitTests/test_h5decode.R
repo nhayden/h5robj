@@ -1,10 +1,7 @@
 suppressMessages({
     library(rhdf5)
-    library(GenomicRanges)
-    library(RUnit)
+    library(IRanges)
 })
-
-options(error=recover)
 
 .factor <- function() {
     vals <- c("d", "a", "a", "e", "e", "b", "a", "e", "c", "b")
@@ -46,10 +43,6 @@ test_h5ls_immediate_descendants <- function() {
     checkIdentical(tar_descs, descs)
 }
 ##test_h5ls_immediate_descendants()
-
-##trace(rhdf5:::.decode.default, browser)
-##trace(rhdf5:::decode_S3, browser)
-##trace(rhdf5:::decode_attrs, browser)
 
 test_decode_NULLobj <- function() {
     x <- NULL
@@ -275,7 +268,7 @@ test_decode_PileupParam <- function() {
 }
 ##test_decode_PileupParam()
 
-test_decode_adhocS4_ISA_basetype <- function() {
+test_decode_adhocS4_ISA_integer <- function() {
     .A = setClass("A", contains="integer")
     a <- .A(1:5)
 
@@ -289,11 +282,10 @@ test_decode_adhocS4_ISA_basetype <- function() {
 
     res <- rhdf5:::decode(h5fl, top_name)
     checkIdentical(a, res)
-    browser()
 }
-test_decode_adhocS4_ISA_basetype()
+##test_decode_adhocS4_ISA_integer()
 
-test_decode_adhocS4_HASA_basetype <- function() {
+test_decode_adhocS4_HASA_integer <- function() {
     .A = setClass("A", representation(a="integer"))
     a <- .A(a=1:5)
 
@@ -309,4 +301,39 @@ test_decode_adhocS4_HASA_basetype <- function() {
     res <- rhdf5:::decode(h5fl, top_name)
     checkIdentical(a, res)
 }
-##test_decode_adhocS4_HASA_basetype()
+##test_decode_adhocS4_HASA_integer()
+
+test_decode_adhocS4_ISA_list <- function() {
+    .A = setClass("A", contains="list")
+    a <- .A(list(x=1:3, y=letters[8:10]))
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+    rhdf5:::encode(a, h5fl, top_name)
+    H5close()
+
+    res <- rhdf5:::decode(h5fl, top_name)
+    checkIdentical(a, res)
+}
+##test_decode_adhocS4_ISA_list()
+
+## list-like thing (typeof() still returns "list" for bookkeeping)
+test_decode_adhocS4_ISA_data.frame <- function() {
+    .A = setClass("A", contains="data.frame")
+    a <- .A(data.frame(x=1:3, y=letters[8:10]))
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+    rhdf5:::encode(a, h5fl, top_name)
+    H5close()
+
+    res <- rhdf5:::decode(h5fl, top_name)
+    checkIdentical(a, res)
+}
+##test_decode_adhocS4_ISA_data.frame()

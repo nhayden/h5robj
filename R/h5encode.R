@@ -30,9 +30,10 @@ setGeneric("encode")
 setMethod("encode", "ANY", function(obj, file, name, ...) {
     h5createGroup(file, name)
     encode_bookkeeping(obj, file, name)
-    if(is.null(obj) || length(obj) == 0L) ## check length for empty lists
-        return()
     encode_attrs(obj, file, name)
+    ## 0-length objs should only encode bookkeeping and attrs
+    if(is.null(obj) || length(obj) == 0L)
+        return()
     encode_data(obj, file, name)
 })
 
@@ -48,7 +49,7 @@ encode_data <- function(obj, file, name, ...) {
     if(is.null(obj))
         return()
     data_name <- paste(name, "data", sep="/")
-    ## XXXX FIX ME: how to neatly decompose data and attrs?
+    ## Is there a better way to decompose attributes and data on S4?
     attributes(obj) <- NULL
     if(is.recursive(obj)) {
         encode_list_like(obj, file, data_name, ...)
@@ -85,8 +86,8 @@ encode.name <- function(obj, file, name, ...) {
 }
 
 encode.default <- function(obj, file, name, ...) {
-    ## XXXX FIX ME: shouldn't have to know about "S4" class, which
-    ## represents an empty obj with the S4 bit set
+    ## FIX ME: is there a way to avoid knowing about "S4" class (which
+    ## represents an empty obj with the S4 bit set)?
     if(is.null(obj) || class(obj) == "S4")
         return()
     h5createGroup(file, name)

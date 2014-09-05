@@ -1,12 +1,7 @@
 suppressMessages({
     library(rhdf5)
-    library(GenomicRanges)
-    library(RUnit)
+    library(IRanges)
 })
-
-.gen_timestamp_string <- function() {
-    as.character(as.numeric(as.POSIXct(Sys.time())))
-}
 
 .simpleIRanges <- function() {
     ## from IRanges man page
@@ -26,14 +21,6 @@ suppressMessages({
 .matrix <- function() {
     mdat <- matrix(1, dimnames=list("a", Col="b"))
 }
-
-## trace(rhdf5:::encode, quote(print(obj)))
-## trace(rhdf5:::encode_bookkeeping, quote(print(obj)))
-## trace(rhdf5:::encode_list_like, quote(print(obj)))
-## trace(rhdf5:::encode.default, browser)
-## trace(rhdf5:::encode_attrs, browser)
-## trace(rhdf5:::encode_data, browser)
-options(error=recover)
 
 test_encode_IRanges <- function() {
     ir <- .simpleIRanges()
@@ -99,7 +86,7 @@ test_encode_IRanges <- function() {
 }
 ##test_encode_IRanges()
 
-test_encode_adhocS4_HASA_basetype <- function() {
+test_encode_adhocS4_HASA_integer <- function() {
     .A = setClass("A", representation(z="integer"))
     a <- .A(z=1:5)
 
@@ -128,9 +115,9 @@ test_encode_adhocS4_HASA_basetype <- function() {
     z_data <- as.integer(h5read(h5fl, z_name))
     checkIdentical(a@z, z_data)    
 }
-##test_encode_adhocS4_HASA_basetype()
+##test_encode_adhocS4_HASA_integer()
 
-test_encode_adhocS4_ISA_basetype <- function() {
+test_encode_adhocS4_ISA_integer <- function() {
     .A = setClass("A", contains="integer")
     a <- .A(1:5)
 
@@ -139,7 +126,6 @@ test_encode_adhocS4_ISA_basetype <- function() {
         message(h5fl)
     h5createFile(h5fl)
     top_name <- "foo"
-    ##trace(rhdf5:::encode.default, browser)
     rhdf5:::encode(a, h5fl, top_name)
     H5close()
 
@@ -154,7 +140,63 @@ test_encode_adhocS4_ISA_basetype <- function() {
     data_name <- "foo/data/data"
     checkIdentical(slot(a, ".Data"), as.integer(h5read(h5fl, data_name)))
 }
-##test_encode_adhocS4_ISA_basetype()
+##test_encode_adhocS4_ISA_integer()
+
+test_encode_adhocS4_ISA_integer_dataless <- function() {
+    .A = setClass("A", contains="integer")
+    a <- .A()
+
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+    top_name <- "foo"
+    rhdf5:::encode(a, h5fl, top_name)
+    H5close()
+
+    attrs <- attributes(a)
+
+    ## check bookkeeping for adhoc S4 class
+    bk_ats <- lapply(h5readAttributes(h5fl, "foo"), as.character)
+    checkIdentical("A", bk_ats[["class"]])
+    checkIdentical(".GlobalEnv", bk_ats[["package"]])
+    checkIdentical("INTSXP", bk_ats[["sexptype"]])
+
+    ## no .Data...
+    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/data/data"))
+
+    ## ... but need class attributes
+    checkTrue(rhdf5:::h5exists(h5fl, "foo/attrs"))
+    checkTrue(rhdf5:::h5exists(h5fl, "foo/attrs/class"))
+    
+}
+##test_encode_adhocS4_ISA_integer_dataless()
+
+## test absence / presence of DataPart in different inheritance scenarios
+test_encode_adhocS4_DataPart_encoding <- function() {
+    h5fl <- tempfile(fileext=".h5")
+    if(interactive())
+        message(h5fl)
+    h5createFile(h5fl)
+
+    .A <- setClass("A", contains="integer")
+    a1 <- .A(1:5)
+    a2 <- .A()
+
+    rhdf5:::encode(a1, h5fl, "a1")
+    rhdf5:::encode(a2, h5fl, "a2")
+    H5close()
+
+    checkTrue(rhdf5:::h5exists(h5fl, "a1/data/data"))
+    ## since no data associated
+    checkTrue(rhdf5:::.isAbsent(h5fl, "a2/data/data"))
+
+    .B <- setClass("B", slots=list(a="integer"))
+    b1 <- .B(a=1:3)
+    rhdf5:::encode(b1, h5fl, "b1")
+    checkTrue(rhdf5:::.isAbsent(h5fl, "b1/data/data"))
+}
+##test_encode_adhocS4_DataPart_encoding()
 
 test_encode_bookkeeping_S4 <- function() {
     ir <- IRanges()

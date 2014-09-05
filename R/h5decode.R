@@ -9,7 +9,6 @@ decode <- function(file, name, ...) {
     bkk_names <- names(bkk)
     if( !("class" %in% bkk_names) || !("sexptype" %in% bkk_names) )
         stop("Can't decode; missing bookkeeping information in file")
-    ## XXXX FIX ME: is there a way to double-check is S4 without S4 bit?
     if( bkk[["sexptype"]] == "S4SXP" && !("package" %in% bkk_names) )
         stop("Can't decode; S4 object without package information")
 
@@ -48,7 +47,6 @@ decode_list_like <- function(file, name, retain.names=FALSE, ...) {
     res <- vector('list', length(list_elts))
     if(retain.names) {
         ## FIX ME: include check that names attribute exists in H5?
-        ## names will be overwritten if names attributes is associated with obj
         names(res) <- infer_list_names(list_elts)
     }
     for(i in seq_along(list_elts)) {
@@ -121,11 +119,20 @@ decode_S4 <- function(file, name, bookkeeping)
     if (!identical(pkg, attr(class_def@className, "package")))
         stop("class '", class_name, "' not defined in package '", pkg, "'")
 
-    attrs <- decode_attrs(file, name) ## list
-
     ## initialize with initialize,ANY-method
     initANY <- getMethod(initialize, "ANY")
     proto_obj <- .Call(methods:::C_new_object, class_def)
+    
+    ## '.Data' slot referred to as "DataPart"; see ?getDataPart
+    data_part <- decode_data(file, name, bookkeeping)
+    if(!is.null(data_part) && ! (".Data" %in% slotNames(proto_obj)))
+        stop(".Data information retrieved for general S4 object",
+             "(should not have .Data)")
+    if(!is.null(data_part))
+        slot(proto_obj, ".Data") <- data_part
+    
+    attrs <- decode_attrs(file, name) ## list
     attributes(proto_obj) <- attrs
+
     proto_obj
 }
