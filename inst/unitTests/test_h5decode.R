@@ -22,7 +22,7 @@ suppressMessages({
 ## methods:::.pseudoNULL for the pseudoNULL object; pseudoNULL is used
 ## as a placeholder symbol for *ORNULL slots in S4 objects
 test_pseudoNULL_represenation <- function() {
-    checkIdentical(rhdf5:::.pseudoNULL, methods:::.pseudoNULL)
+    checkIdentical(h5robj:::.pseudoNULL, methods:::.pseudoNULL)
 }
 ##test_pseudoNULL_represenation()
 
@@ -35,10 +35,10 @@ test_h5ls_immediate_descendants <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(ff, h5fl, top_name)
+    encode(ff, h5fl, top_name)
     H5close()
 
-    descs <- rhdf5:::h5ls_immeditate_descendants(h5fl, "foo/attrs")
+    descs <- h5robj:::h5ls_immeditate_descendants(h5fl, "foo/attrs")
     tar_descs <- c("/foo/attrs/class", "/foo/attrs/levels")
     checkIdentical(tar_descs, descs)
 }
@@ -53,10 +53,10 @@ test_decode_NULLobj <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(x, h5fl, top_name)
+    encode(x, h5fl, top_name)
     H5close()
     
-    res <- rhdf5:::decode(h5fl, top_name)
+    res <- decode(h5fl, top_name)
     checkIdentical(x, res)
 }
 ##test_decode_NULLobj()
@@ -71,10 +71,10 @@ test_decode_zero_length_numeric <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(nums, h5fl, top_name)
+    encode(nums, h5fl, top_name)
     H5close()
 
-    res <- rhdf5:::decode(h5fl, top_name)
+    res <- decode(h5fl, top_name)
     checkIdentical(nums, res)
 }
 ##test_decode_zero_length_numeric()
@@ -88,10 +88,10 @@ test_decode_primitive <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(ints, h5fl, top_name)
+    encode(ints, h5fl, top_name)
     H5close()
 
-    res <- rhdf5:::decode(h5fl, top_name)
+    res <- decode(h5fl, top_name)
     checkIdentical(ints, res)
 }
 ##test_decode_primitive()
@@ -106,10 +106,10 @@ test_decode_primitive_with_attrs <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(ints, h5fl, top_name)
+    encode(ints, h5fl, top_name)
     H5close()
 
-    res <- rhdf5:::decode(h5fl, top_name)
+    res <- decode(h5fl, top_name)
     checkIdentical(ints, res)
 }
 ##test_decode_primitive_with_attrs()
@@ -123,10 +123,10 @@ test_decode_empty_list <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(l, h5fl, top_name)
+    encode(l, h5fl, top_name)
     H5close()
 
-    res <- rhdf5:::decode(h5fl, top_name)
+    res <- decode(h5fl, top_name)
     checkIdentical(l, res)
 }
 ##test_decode_empty_list()
@@ -140,10 +140,10 @@ test_decode_list_named <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(l, h5fl, top_name)
+    encode(l, h5fl, top_name)
     H5close()
 
-    res <- rhdf5:::decode(h5fl, top_name)
+    res <- decode(h5fl, top_name)
     checkIdentical(l, res)
 }
 ##test_decode_list_named()
@@ -157,10 +157,10 @@ test_decode_list_partially_named <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(l, h5fl, top_name)
+    encode(l, h5fl, top_name)
     H5close()
 
-    res <- rhdf5:::decode(h5fl, top_name)
+    res <- decode(h5fl, top_name)
     checkIdentical(l, res)
 }
 ##test_decode_list_partially_named()
@@ -174,10 +174,10 @@ test_decode_list_unnamed <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(l, h5fl, top_name)
+    encode(l, h5fl, top_name)
     H5close()
 
-    res <- rhdf5:::decode(h5fl, top_name)
+    res <- decode(h5fl, top_name)
     checkIdentical(l, res)
 }
 ##test_decode_list_unnamed()
@@ -191,10 +191,10 @@ test_decode_factor <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(ff, h5fl, top_name)
+    encode(ff, h5fl, top_name)
     H5close()
 
-    res <- rhdf5:::decode(h5fl, top_name)
+    res <- decode(h5fl, top_name)
     checkIdentical(ff, res)
 }
 ##test_decode_factor()
@@ -207,10 +207,10 @@ test_decode_matrix <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(mx, h5fl, top_name)
+    encode(mx, h5fl, top_name)
     H5close()
 
-    res <- rhdf5:::decode(h5fl, top_name)
+    res <- decode(h5fl, top_name)
     checkIdentical(mx, res)
 }
 ##test_decode_matrix()
@@ -224,10 +224,10 @@ test_decode_SYMSXP <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(n, h5fl, top_name)
+    encode(n, h5fl, top_name)
     H5close()
 
-    res <- rhdf5:::decode(h5fl, top_name)
+    res <- decode(h5fl, top_name)
     checkIdentical(n, res)
 }
 ##test_decode_SYMSXP()
@@ -241,10 +241,10 @@ test_decode_IRanges <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(ir, h5fl, top_name)
+    encode(ir, h5fl, top_name)
     H5close()
 
-    res <- rhdf5:::decode(h5fl, top_name)
+    res <- decode(h5fl, top_name)
     checkIdentical(ir, res)
 }
 ##test_decode_IRanges()
@@ -260,10 +260,10 @@ test_decode_PileupParam <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(pp, h5fl, top_name)
+    encode(pp, h5fl, top_name)
     H5close()
 
-    res <- rhdf5:::decode(h5fl, top_name)
+    res <- decode(h5fl, top_name)
     checkIdentical(pp, res)
 }
 ##test_decode_PileupParam()
@@ -277,10 +277,10 @@ test_decode_adhocS4_ISA_integer <- function() {
         message(h5fl)
     h5createFile(h5fl)
     top_name <- "foo"
-    rhdf5:::encode(a, h5fl, top_name)
+    encode(a, h5fl, top_name)
     H5close()
 
-    res <- rhdf5:::decode(h5fl, top_name)
+    res <- decode(h5fl, top_name)
     checkIdentical(a, res)
 }
 ##test_decode_adhocS4_ISA_integer()
@@ -295,10 +295,10 @@ test_decode_adhocS4_HASA_integer <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
     
-    rhdf5:::encode(a, h5fl, top_name)
+    encode(a, h5fl, top_name)
     H5close()
 
-    res <- rhdf5:::decode(h5fl, top_name)
+    res <- decode(h5fl, top_name)
     checkIdentical(a, res)
 }
 ##test_decode_adhocS4_HASA_integer()
@@ -312,10 +312,10 @@ test_decode_adhocS4_ISA_list <- function() {
         message(h5fl)
     h5createFile(h5fl)
     top_name <- "foo"
-    rhdf5:::encode(a, h5fl, top_name)
+    encode(a, h5fl, top_name)
     H5close()
 
-    res <- rhdf5:::decode(h5fl, top_name)
+    res <- decode(h5fl, top_name)
     checkIdentical(a, res)
 }
 ##test_decode_adhocS4_ISA_list()
@@ -330,10 +330,10 @@ test_decode_adhocS4_ISA_data.frame <- function() {
         message(h5fl)
     h5createFile(h5fl)
     top_name <- "foo"
-    rhdf5:::encode(a, h5fl, top_name)
+    encode(a, h5fl, top_name)
     H5close()
 
-    res <- rhdf5:::decode(h5fl, top_name)
+    res <- decode(h5fl, top_name)
     checkIdentical(a, res)
 }
 ##test_decode_adhocS4_ISA_data.frame()

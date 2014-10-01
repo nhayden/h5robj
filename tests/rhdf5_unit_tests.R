@@ -1,1 +1,0 @@
-BiocGenerics:::testPackage('rhdf5')

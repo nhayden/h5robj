@@ -31,11 +31,11 @@ test_encode_IRanges <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
     
-    rhdf5:::encode(ir, h5fl, top_name)
+    encode(ir, h5fl, top_name)
     H5close()
 
     ## ensure no data recorded (since a no-data S4)
-    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/data"))
+    checkTrue(h5robj:::.isAbsent(h5fl, "foo/data"))
 
     attrs <- attributes(ir)
 
@@ -71,8 +71,8 @@ test_encode_IRanges <- function() {
     metadata_ats <- lapply(h5readAttributes(h5fl, metadata_name), as.character)
     checkIdentical("list", metadata_ats[["class"]])
     checkIdentical("VECSXP", metadata_ats[["sexptype"]])
-    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/attrs/metadata/data"))
-    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/attrs/metadata/attrs"))
+    checkTrue(h5robj:::.isAbsent(h5fl, "foo/attrs/metadata/data"))
+    checkTrue(h5robj:::.isAbsent(h5fl, "foo/attrs/metadata/attrs"))
 
     ## attrs:start
     start_name <- "foo/attrs/start/data/data"
@@ -96,11 +96,11 @@ test_encode_adhocS4_HASA_integer <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
     
-    rhdf5:::encode(a, h5fl, top_name)
+    encode(a, h5fl, top_name)
     H5close()
 
     ## ensure no data recorded (since a no-data S4)
-    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/data"))
+    checkTrue(h5robj:::.isAbsent(h5fl, "foo/data"))
 
     attrs <- attributes(a)
 
@@ -126,7 +126,7 @@ test_encode_adhocS4_ISA_integer <- function() {
         message(h5fl)
     h5createFile(h5fl)
     top_name <- "foo"
-    rhdf5:::encode(a, h5fl, top_name)
+    encode(a, h5fl, top_name)
     H5close()
 
     attrs <- attributes(a)
@@ -151,7 +151,7 @@ test_encode_adhocS4_ISA_integer_dataless <- function() {
         message(h5fl)
     h5createFile(h5fl)
     top_name <- "foo"
-    rhdf5:::encode(a, h5fl, top_name)
+    encode(a, h5fl, top_name)
     H5close()
 
     attrs <- attributes(a)
@@ -163,11 +163,11 @@ test_encode_adhocS4_ISA_integer_dataless <- function() {
     checkIdentical("INTSXP", bk_ats[["sexptype"]])
 
     ## no .Data...
-    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/data/data"))
+    checkTrue(h5robj:::.isAbsent(h5fl, "foo/data/data"))
 
     ## ... but need class attributes
-    checkTrue(rhdf5:::h5exists(h5fl, "foo/attrs"))
-    checkTrue(rhdf5:::h5exists(h5fl, "foo/attrs/class"))
+    checkTrue(h5robj:::h5exists(h5fl, "foo/attrs"))
+    checkTrue(h5robj:::h5exists(h5fl, "foo/attrs/class"))
     
 }
 ##test_encode_adhocS4_ISA_integer_dataless()
@@ -183,18 +183,18 @@ test_encode_adhocS4_DataPart_encoding <- function() {
     a1 <- .A(1:5)
     a2 <- .A()
 
-    rhdf5:::encode(a1, h5fl, "a1")
-    rhdf5:::encode(a2, h5fl, "a2")
+    encode(a1, h5fl, "a1")
+    encode(a2, h5fl, "a2")
     H5close()
 
-    checkTrue(rhdf5:::h5exists(h5fl, "a1/data/data"))
+    checkTrue(h5robj:::h5exists(h5fl, "a1/data/data"))
     ## since no data associated
-    checkTrue(rhdf5:::.isAbsent(h5fl, "a2/data/data"))
+    checkTrue(h5robj:::.isAbsent(h5fl, "a2/data/data"))
 
     .B <- setClass("B", slots=list(a="integer"))
     b1 <- .B(a=1:3)
-    rhdf5:::encode(b1, h5fl, "b1")
-    checkTrue(rhdf5:::.isAbsent(h5fl, "b1/data/data"))
+    encode(b1, h5fl, "b1")
+    checkTrue(h5robj:::.isAbsent(h5fl, "b1/data/data"))
 }
 ##test_encode_adhocS4_DataPart_encoding()
 
@@ -209,7 +209,7 @@ test_encode_bookkeeping_S4 <- function() {
 
     ## create arbitrary H5 object to attach attributes to
     h5createGroup(h5fl, top_name)
-    rhdf5:::encode_bookkeeping(ir, h5fl, top_name)
+    h5robj:::encode_bookkeeping(ir, h5fl, top_name)
     H5close()
 
     foo_ats <- lapply(h5readAttributes(h5fl, "foo"), as.character)
@@ -231,7 +231,7 @@ test_encode_bookkeeping_S3 <- function() {
 
     ## create arbitrary H5 object to attach attributes to
     h5createGroup(h5fl, top_name)
-    rhdf5:::encode_bookkeeping(df, h5fl, top_name)
+    h5robj:::encode_bookkeeping(df, h5fl, top_name)
     H5close()
 
     foo_ats <- lapply(h5readAttributes(h5fl, "foo"), as.character)
@@ -251,7 +251,7 @@ test_encode_bookkeeping_primitive <- function() {
 
     ## create arbitrary H5 object to attach attributes to
     h5createGroup(h5fl, top_name)
-    rhdf5:::encode_bookkeeping(ints, h5fl, top_name)
+    h5robj:::encode_bookkeeping(ints, h5fl, top_name)
     H5close()
 
     foo_ats <- lapply(h5readAttributes(h5fl, "foo"), as.character)
@@ -270,10 +270,10 @@ test_encode_primitive <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(x, h5fl, top_name)
+    encode(x, h5fl, top_name)
     H5close()
 
-    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/attrs"))
+    checkTrue(h5robj:::.isAbsent(h5fl, "foo/attrs"))
 
     data_name <- "foo/data/data"
     data <- as.integer(h5read(h5fl, data_name))
@@ -291,7 +291,7 @@ test_encode_bookkeeping_SYMSXP <- function() {
     top_name <- "foo"
 
     h5createGroup(h5fl, top_name)
-    rhdf5:::encode_bookkeeping(n, h5fl, top_name)
+    h5robj:::encode_bookkeeping(n, h5fl, top_name)
     H5close()
 
     foo_ats <- lapply(h5readAttributes(h5fl, "foo"), as.character)
@@ -310,10 +310,10 @@ test_encode_SYMSXP <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(n, h5fl, top_name)
+    encode(n, h5fl, top_name)
     H5close()
 
-    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/attrs"))
+    checkTrue(h5robj:::.isAbsent(h5fl, "foo/attrs"))
     data_name <- "foo/data/data"
     data <- as.character(h5read(h5fl, data_name))
     checkIdentical(as.character(n), data)
@@ -330,7 +330,7 @@ test_encode_bookkeeping_NULLobj <- function() {
     top_name <- "foo"
 
     h5createGroup(h5fl, top_name)
-    rhdf5:::encode_bookkeeping(x, h5fl, top_name)
+    h5robj:::encode_bookkeeping(x, h5fl, top_name)
     H5close()
 
     foo_ats <- lapply(h5readAttributes(h5fl, "foo"), as.character)
@@ -349,11 +349,11 @@ test_encode_NULLobj <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(x, h5fl, top_name)
+    encode(x, h5fl, top_name)
     H5close()
     
-    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/attrs"))
-    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/data"))
+    checkTrue(h5robj:::.isAbsent(h5fl, "foo/attrs"))
+    checkTrue(h5robj:::.isAbsent(h5fl, "foo/data"))
 }
 ##test_encode_NULLobj()
 
@@ -368,7 +368,7 @@ test_encode_bookkeeping_empty_list <- function() {
 
     ## create arbitrary H5 object to attach attributes to
     h5createGroup(h5fl, top_name)
-    rhdf5:::encode_bookkeeping(l, h5fl, top_name)
+    h5robj:::encode_bookkeeping(l, h5fl, top_name)
     H5close()
 
     foo_ats <- lapply(h5readAttributes(h5fl, "foo"), as.character)
@@ -387,11 +387,11 @@ test_encode_empty_list <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(l, h5fl, top_name)
+    encode(l, h5fl, top_name)
     H5close()
 
-    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/attrs"))
-    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/data"))
+    checkTrue(h5robj:::.isAbsent(h5fl, "foo/attrs"))
+    checkTrue(h5robj:::.isAbsent(h5fl, "foo/data"))
 }
 ##test_encode_empty_list()
 
@@ -404,21 +404,21 @@ test_encode_list_unnamed <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(l, h5fl, top_name)
+    encode(l, h5fl, top_name)
     H5close()
 
     elt1_data_name <- "foo/data/elt1/data/data"
     elt1_data <- as.integer(h5read(h5fl, elt1_data_name))
     checkIdentical(l[[1]], elt1_data)
-    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/data/elt1/attrs"))
+    checkTrue(h5robj:::.isAbsent(h5fl, "foo/data/elt1/attrs"))
 
     elt2_data_name <- "foo/data/elt2/data/data"
     elt2_data <- as.character(h5read(h5fl, elt2_data_name))
     checkIdentical(l[[2]], elt2_data)
-    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/data/elt2/attrs"))
+    checkTrue(h5robj:::.isAbsent(h5fl, "foo/data/elt2/attrs"))
 
     ## absence of attributes
-    checkTrue(rhdf5:::.isAbsent(h5fl, "foo/attrs"))
+    checkTrue(h5robj:::.isAbsent(h5fl, "foo/attrs"))
 }
 ##test_encode_list_unnamed()
 
@@ -431,7 +431,7 @@ test_encode_list_named <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(l, h5fl, top_name)
+    encode(l, h5fl, top_name)
     H5close()
 
     elt1_data_name <- "foo/data/elt1/data/data"
@@ -457,7 +457,7 @@ test_encode_list_partially_named <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(l, h5fl, top_name)
+    encode(l, h5fl, top_name)
     H5close()
 
     elt1_data_name <- "foo/data/elt1/data/data"
@@ -483,7 +483,7 @@ test_encode_list_with_NULLs <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(l, h5fl, top_name)
+    encode(l, h5fl, top_name)
     H5close()
 
     ## test attrs
@@ -523,7 +523,7 @@ test_encode_data.frame <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(df, h5fl, top_name)
+    encode(df, h5fl, top_name)
     H5close()
 
     ## outer attributes
@@ -567,7 +567,7 @@ test_encode_factor <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(ff, h5fl, top_name)
+    encode(ff, h5fl, top_name)
     H5close()
 
     ## outer attributes
@@ -601,7 +601,7 @@ test_encode_matrix <- function() {
     h5createFile(h5fl)
     top_name <- "foo"
 
-    rhdf5:::encode(mx, h5fl, top_name)
+    encode(mx, h5fl, top_name)
     H5close()
 
     ## outer attributes
