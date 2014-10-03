@@ -7,7 +7,6 @@ Maintainer: Bioconductor Package Maintainer <maintainer@bioconductor.org>
 Description: Represent and interact with R objects using HDF5 storage back-end. 
 License: Artistic-2.0
 LazyLoad: true
-Imports: rhdf5
-Depends: methods
+Depends: methods, bit, rhdf5
 Suggests: RUnit, BiocGenerics
 biocViews: Infrastructure, DataImport

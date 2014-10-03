@@ -1,5 +1,4 @@
 import(methods)
 import(rhdf5)
 
-export(encode)
-export(decode)
+exportPattern("^[[:alpha:]]+")

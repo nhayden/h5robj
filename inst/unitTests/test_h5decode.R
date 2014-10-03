@@ -29,17 +29,14 @@ test_pseudoNULL_represenation <- function() {
 test_h5ls_immediate_descendants <- function() {
     ff <- .factor()
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(ff, h5fl, top_name)
     H5close()
 
-    descs <- h5robj:::h5ls_immeditate_descendants(h5fl, "foo/attrs")
-    tar_descs <- c("/foo/attrs/class", "/foo/attrs/levels")
+    descs <- h5robj:::h5ls_immediate_descendants(h5fl, "foo/attrs")
+    tar_descs <- c("foo/attrs/class", "foo/attrs/levels")
     checkIdentical(tar_descs, descs)
 }
 ##test_h5ls_immediate_descendants()
@@ -47,10 +44,7 @@ test_h5ls_immediate_descendants <- function() {
 test_decode_NULLobj <- function() {
     x <- NULL
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(x, h5fl, top_name)
@@ -65,10 +59,7 @@ test_decode_NULLobj <- function() {
 test_decode_zero_length_numeric <- function() {
     nums <- vector('numeric')
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(nums, h5fl, top_name)
@@ -82,10 +73,7 @@ test_decode_zero_length_numeric <- function() {
 test_decode_primitive <- function() {
     ints <- 1:3
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(ints, h5fl, top_name)
@@ -100,10 +88,7 @@ test_decode_primitive_with_attrs <- function() {
     ints <- 1:3
     attributes(ints) <- list(a=8:10, b=letters[1:3])
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(ints, h5fl, top_name)
@@ -117,10 +102,7 @@ test_decode_primitive_with_attrs <- function() {
 test_decode_empty_list <- function() {
     l <- list()
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(l, h5fl, top_name)
@@ -134,10 +116,7 @@ test_decode_empty_list <- function() {
 test_decode_list_named <- function() {
     l <- list(y=c("x", ""), z=letters[5:7])
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(l, h5fl, top_name)
@@ -151,10 +130,7 @@ test_decode_list_named <- function() {
 test_decode_list_partially_named <- function() {
     l <- list(y=c("x", ""), letters[1:3])
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(l, h5fl, top_name)
@@ -168,10 +144,7 @@ test_decode_list_partially_named <- function() {
 test_decode_list_unnamed <- function() {
     l <- list(1:3, letters[5:7])
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(l, h5fl, top_name)
@@ -185,10 +158,7 @@ test_decode_list_unnamed <- function() {
 test_decode_factor <- function() {
     ff <- .factor()
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(ff, h5fl, top_name)
@@ -201,10 +171,7 @@ test_decode_factor <- function() {
 
 test_decode_matrix <- function() {
     mx <- .matrix()
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(mx, h5fl, top_name)
@@ -218,10 +185,7 @@ test_decode_matrix <- function() {
 test_decode_SYMSXP <- function() {
     n <- as.name("\001NULL\001")
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(n, h5fl, top_name)
@@ -235,10 +199,7 @@ test_decode_SYMSXP <- function() {
 test_decode_IRanges <- function() {
     ir <- .simpleIRanges()
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(ir, h5fl, top_name)
@@ -254,10 +215,7 @@ test_decode_IRanges <- function() {
 test_decode_PileupParam <- function() {
     pp <- Rsamtools:::PileupParam()
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(pp, h5fl, top_name)
@@ -272,10 +230,7 @@ test_decode_adhocS4_ISA_integer <- function() {
     .A = setClass("A", contains="integer")
     a <- .A(1:5)
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
     encode(a, h5fl, top_name)
     H5close()
@@ -289,10 +244,7 @@ test_decode_adhocS4_HASA_integer <- function() {
     .A = setClass("A", representation(a="integer"))
     a <- .A(a=1:5)
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
     
     encode(a, h5fl, top_name)
@@ -307,10 +259,7 @@ test_decode_adhocS4_ISA_list <- function() {
     .A = setClass("A", contains="list")
     a <- .A(list(x=1:3, y=letters[8:10]))
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
     encode(a, h5fl, top_name)
     H5close()
@@ -325,10 +274,7 @@ test_decode_adhocS4_ISA_data.frame <- function() {
     .A = setClass("A", contains="data.frame")
     a <- .A(data.frame(x=1:3, y=letters[8:10]))
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
     encode(a, h5fl, top_name)
     H5close()

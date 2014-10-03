@@ -43,7 +43,7 @@ decode_S3 <- function(file, name, bookkeeping) {
 }
 
 decode_list_like <- function(file, name, retain.names=FALSE, ...) {
-    list_elts <- h5ls_immeditate_descendants(file, name)
+    list_elts <- h5ls_immediate_descendants(file, name)
     res <- vector('list', length(list_elts))
     if(retain.names) {
         ## FIX ME: include check that names attribute exists in H5?

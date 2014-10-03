@@ -13,6 +13,12 @@ h5exists <- function(file, name) {
     res
 }
 
+has_dims_attr <- function(file, name) {
+    ## or should only check attrs/dim? Could be NULL in that case?
+    dims_path <- paste(name, "attrs/dim/data/data", sep="/")
+    h5exists(file, dims_path)
+}
+
 ## Rtype values that should not have class attribute explicitly set
 .classless_types <- c("logical", "integer", "double", "character", "raw",
                       "list", "NULL", "symbol")
@@ -40,6 +46,31 @@ Rtype <- function(x) {
            stop("unhandled h5type '", x, "'"))
 }
 
+.create_temp_h5 <- function() {
+    h5fl <- tempfile()
+    if(interactive())
+        message(h5fl)
+    stopifnot(h5createFile(h5fl))
+    ## return path to temp h5
+    h5fl
+}
+
+getdims <- function(file, name) {
+    fid <- H5Fopen(file)
+    oid <- H5Oopen(fid, name)
+    ## will throw error if not a dataset (invisibly returns NULL);
+    ## seems more diagnostic than the error if H5Dopen is not a
+    ## dataset.
+    rhdf5:::h5checktype(oid, "dataset")
+    dataspace <- H5Dget_space(oid)
+    dims <- H5Sget_simple_extent_dims(dataspace)
+    extents <- dims$size
+    H5Fclose(fid)
+    H5Oclose(oid)
+    H5Sclose(dataspace)
+    extents
+}
+
 all_paths_from_h5 <- function(filename) {
     h5l <- h5ls(filename)
     paths <- character(length=nrow(h5l))
@@ -55,21 +86,36 @@ all_paths_from_h5 <- function(filename) {
     paths
 }
 
-h5ls_immeditate_descendants <- function(file, name) {
+h5ls_immediate_descendants <- function(file, name) {
     if(!h5exists(file, name))
         stop("object '", name, "' does not exist")
-    if(substr(name, 1L, 1L) != "/")
+    prepended_slash <- FALSE
+    if(substr(name, 1L, 1L) != "/") {
         name <- paste0("/", name)
+        prepended_slash <- TRUE
+    }
     pattern <- paste0("^", name)
     paths <- all_paths_from_h5(file)
     matches <- grep(pattern, paths, value=TRUE)
     input_depth <- length(strsplit(name, "/")[[1]])
     matches_lens <- lapply(strsplit(matches, "/"), length)
     imm_descendants <- matches[matches_lens == (input_depth + 1)]
+    if(prepended_slash)
+        substring(imm_descendants, 2L)
+    else
+        imm_descendants
 }
 
+## used by decode to infer the names of list elements
 infer_list_names <- function(paths) {
     if(is.null(paths) || length(paths) == 0L)
         stop("paths must be non-zero")
     basename(paths)
+}
+
+## bit object initialized to all TRUE; do this in C?
+binit <- function(length) {
+    b = bit(as.integer(length))
+    b[] <- TRUE
+    b
 }

@@ -1,13 +1,3 @@
-h5type <- function(x) {
-    switch(typeof(x),
-           ## primitives
-           logical="LGLSXP", integer="INTSXP", double="REALSXP",
-           character="STRSXP", raw="RAWSXP",
-           ## other
-           S4="S4SXP", list="VECSXP", NULL="NILSXP", symbol="SYMSXP",
-           stop("unhandled type '", typeof(x), "'"))
-}
-
 encode_bookkeeping <- function(obj, file, name, ...) {
     fid <- H5Fopen(file)
     oid <- H5Oopen(fid, name)
@@ -25,7 +15,7 @@ encode_bookkeeping <- function(obj, file, name, ...) {
 encode <- function(obj, file, name, ...)
     UseMethod("encode")
 
-setGeneric("encode")
+setGeneric("encode", signature="obj")
 
 setMethod("encode", "ANY", function(obj, file, name, ...) {
     h5createGroup(file, name)

@@ -25,10 +25,7 @@ suppressMessages({
 test_encode_IRanges <- function() {
     ir <- .simpleIRanges()
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
     
     encode(ir, h5fl, top_name)
@@ -90,10 +87,7 @@ test_encode_adhocS4_HASA_integer <- function() {
     .A = setClass("A", representation(z="integer"))
     a <- .A(z=1:5)
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
     
     encode(a, h5fl, top_name)
@@ -121,10 +115,7 @@ test_encode_adhocS4_ISA_integer <- function() {
     .A = setClass("A", contains="integer")
     a <- .A(1:5)
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
     encode(a, h5fl, top_name)
     H5close()
@@ -146,10 +137,7 @@ test_encode_adhocS4_ISA_integer_dataless <- function() {
     .A = setClass("A", contains="integer")
     a <- .A()
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
     encode(a, h5fl, top_name)
     H5close()
@@ -174,10 +162,7 @@ test_encode_adhocS4_ISA_integer_dataless <- function() {
 
 ## test absence / presence of DataPart in different inheritance scenarios
 test_encode_adhocS4_DataPart_encoding <- function() {
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
 
     .A <- setClass("A", contains="integer")
     a1 <- .A(1:5)
@@ -201,10 +186,7 @@ test_encode_adhocS4_DataPart_encoding <- function() {
 test_encode_bookkeeping_S4 <- function() {
     ir <- IRanges()
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     ## create arbitrary H5 object to attach attributes to
@@ -223,10 +205,7 @@ test_encode_bookkeeping_S4 <- function() {
 test_encode_bookkeeping_S3 <- function() {
     df <- .data.frame()
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     ## create arbitrary H5 object to attach attributes to
@@ -243,10 +222,7 @@ test_encode_bookkeeping_S3 <- function() {
 test_encode_bookkeeping_primitive <- function() {
     ints <- 1:3
     
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     ## create arbitrary H5 object to attach attributes to
@@ -264,10 +240,7 @@ test_encode_bookkeeping_primitive <- function() {
 test_encode_primitive <- function() {
     x <- 1:3
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(x, h5fl, top_name)
@@ -284,10 +257,7 @@ test_encode_primitive <- function() {
 test_encode_bookkeeping_SYMSXP <- function() {
     n <- as.name('\001NULL\001')
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     h5createGroup(h5fl, top_name)
@@ -304,10 +274,7 @@ test_encode_bookkeeping_SYMSXP <- function() {
 test_encode_SYMSXP <- function() {
     n <- as.name('\001NULL\001')
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(n, h5fl, top_name)
@@ -323,10 +290,7 @@ test_encode_SYMSXP <- function() {
 test_encode_bookkeeping_NULLobj <- function() {
     x <- NULL
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     h5createGroup(h5fl, top_name)
@@ -343,10 +307,7 @@ test_encode_bookkeeping_NULLobj <- function() {
 test_encode_NULLobj <- function() {
     x <- NULL
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(x, h5fl, top_name)
@@ -360,10 +321,7 @@ test_encode_NULLobj <- function() {
 test_encode_bookkeeping_empty_list <- function() {
     l <- list()
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     ## create arbitrary H5 object to attach attributes to
@@ -381,10 +339,7 @@ test_encode_bookkeeping_empty_list <- function() {
 test_encode_empty_list <- function() {
     l <- list()
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(l, h5fl, top_name)
@@ -398,10 +353,7 @@ test_encode_empty_list <- function() {
 test_encode_list_unnamed <- function() {
     l <- list(1:3, letters[5:7])
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(l, h5fl, top_name)
@@ -425,10 +377,7 @@ test_encode_list_unnamed <- function() {
 test_encode_list_named <- function() {
     l <- list(y=c("x", ""), z=letters[5:7])
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(l, h5fl, top_name)
@@ -451,10 +400,7 @@ test_encode_list_named <- function() {
 test_encode_list_partially_named <- function() {
     l <- list(y=c("x", ""), letters[1:3])
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(l, h5fl, top_name)
@@ -477,10 +423,7 @@ test_encode_list_partially_named <- function() {
 test_encode_list_with_NULLs <- function() {
     l <- list(x=1:3, y=NULL, NULL)
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(l, h5fl, top_name)
@@ -517,10 +460,7 @@ test_encode_list_with_NULLs <- function() {
 test_encode_data.frame <- function() {
     df <- .data.frame()
 
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(df, h5fl, top_name)
@@ -561,10 +501,7 @@ test_encode_data.frame <- function() {
 
 test_encode_factor <- function() {
     ff <- .factor()
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(ff, h5fl, top_name)
@@ -595,10 +532,7 @@ test_encode_factor <- function() {
 
 test_encode_matrix <- function() {
     mx <- .matrix()
-    h5fl <- tempfile(fileext=".h5")
-    if(interactive())
-        message(h5fl)
-    h5createFile(h5fl)
+    h5fl <- h5robj:::.create_temp_h5()
     top_name <- "foo"
 
     encode(mx, h5fl, top_name)
