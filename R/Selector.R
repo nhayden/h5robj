@@ -10,6 +10,15 @@
 .Placeholder <- setClass("Placeholder", slots=list(ignore="raw"))
 Placeholder <- function() .Placeholder(ignore=raw())
 
+.AllS <- setClass("AllS", slots=list(file="character", root="character"))
+AllS <- function(file, root) {
+    if(!file.exists(file))
+        stop("file does not exist: ", file)
+    if(.isAbsent(file, root))
+        stop("path '", root, "' in file '", file, "' does not exist")
+    .AllS(file=file, root=root)
+}
+
 generate_h5attributes <- function(file, root) {
     path_to_attrs_group <- paste(root, "attrs", sep="/")
     if(!h5exists(file, path_to_attrs_group))

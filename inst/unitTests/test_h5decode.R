@@ -1,5 +1,6 @@
 suppressMessages({
-    library(rhdf5)
+    library(h5robj)
+    library(RUnit)
     library(IRanges)
 })
 

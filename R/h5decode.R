@@ -1,11 +1,15 @@
-decode_bookkeeping <- function(file, name, ...) {
-    bookkeeping <- lapply(h5readAttributes(file, name), as.character)
+decode_bookkeeping <- function(sel) {
+    bookkeeping <- lapply(h5readAttributes(sel@file, sel@root), as.character)
     H5close()
     bookkeeping
 }
 
 decode <- function(file, name, ...) {
-    bkk <- decode_bookkeeping(file, name, ...)
+    decodeSel(AllS(file, name))
+}
+
+decodeSel <- function(sel) {
+    bkk <- decode_bookkeeping(sel)
     bkk_names <- names(bkk)
     if( !("class" %in% bkk_names) || !("sexptype" %in% bkk_names) )
         stop("Can't decode; missing bookkeeping information in file")
@@ -13,12 +17,12 @@ decode <- function(file, name, ...) {
         stop("Can't decode; S4 object without package information")
 
     if("package" %in% bkk_names)
-        decode_S4(file, name, bkk)
+        decode_S4(sel, bkk)
     else
-        decode_S3(file, name, bkk)
+        decode_S3(sel, bkk)
 }
 
-decode_S3 <- function(file, name, bookkeeping) {
+decode_S3 <- function(sel, bookkeeping) {
     cl_name <- bookkeeping[["class"]]
     nugget_sexptype <- Rtype(bookkeeping[["sexptype"]])
     if( !(nugget_sexptype %in% .classless_types) ) {
@@ -35,58 +39,59 @@ decode_S3 <- function(file, name, bookkeeping) {
     } else {
         proto_obj <- structure(vector(nugget_sexptype), class=cl_name)
     }
-    .decode(proto_obj, file, name, bookkeeping)
+    .decode(proto_obj, sel, bookkeeping)
 }
 
-.decode <- function(obj, file, name, bookkeeping, ...) {
+.decode <- function(obj, sel, bookkeeping, ...) {
     UseMethod(".decode")
 }
 
-decode_list_like <- function(file, name, retain.names=FALSE, ...) {
-    list_elts <- h5ls_immediate_descendants(file, name)
+decode_list_like <- function(sel, retain.names=FALSE, ...) {
+    list_elts <- h5ls_immediate_descendants(sel@file, sel@root)
     res <- vector('list', length(list_elts))
     if(retain.names) {
         ## FIX ME: include check that names attribute exists in H5?
         names(res) <- infer_list_names(list_elts)
     }
     for(i in seq_along(list_elts)) {
-        res[[i]] <- decode(file, list_elts[[i]], ...)
+        res[[i]] <- decode(sel@file, list_elts[[i]], ...)
     }
     res
 }
 
-read_nugget <- function(file, name, bookkeeping, ...) {
-    nugget_name <- paste(name, "data", sep="/")
-    if(!h5exists(file, nugget_name))
-        stop("data nugget for '", name, "' does not exist in file")
-    as.vector(h5read(file, nugget_name))
+read_nugget <- function(sel, bookkeeping, ...) {
+    nugget_name <- paste(sel@root, "data", sep="/")
+    if(!h5exists(sel@file, nugget_name))
+        stop("data nugget for '", sel@root, "' does not exist in file")
+    as.vector(h5read(sel@file, nugget_name))
 }
 
-decode_data <- function(file, name, bookkeeping, ...) {
-    data_name <- paste(name, "data", sep="/")
-    if(!h5exists(file, data_name)) {
+decode_data <- function(sel, bookkeeping, ...) {
+    data_name <- paste(sel@root, "data", sep="/")
+    if(!h5exists(sel@file, data_name)) {
         NULL
     } else {
         if(bookkeeping[["sexptype"]] == "VECSXP") {
-            decode_list_like(file, data_name, ...)
+            decode_list_like(AllS(file=sel@file, root=data_name), ...)
         } else {
-            read_nugget(file, data_name, bookkeeping, ...)
+            ##read_nugget(file, data_name, bookkeeping, ...)
+            read_nugget(AllS(sel@file, data_name), bookkeeping, ...)
         }
     }
 }
 
-decode_attrs <- function(file, name, bookkeeping, ...) {
-    attrs_name <- paste(name, "attrs", sep="/")
-    if(!h5exists(file, attrs_name)) {
+decode_attrs <- function(sel, bookkeeping, ...) {
+    attrs_name <- paste(sel@root, "attrs", sep="/")
+    if(!h5exists(sel@file, attrs_name)) {
         NULL
     } else {
-        decode_list_like(file, attrs_name, retain.names=TRUE, ...)
+        decode_list_like(AllS(file=sel@file, root=attrs_name), retain.names=TRUE, ...)
     }
 }
 
-.decode.name <- function(obj, file, name, bookkeeping, ...) {
-    attrs <- decode_attrs(file, name, ...)
-    data <- decode_data(file, name, bookkeeping, ...)
+.decode.name <- function(obj, sel, bookkeeping, ...) {
+    attrs <- decode_attrs(sel, ...)
+    data <- decode_data(sel, bookkeeping, ...)
 
     if(is.null(data))
         return(obj)
@@ -97,9 +102,9 @@ decode_attrs <- function(file, name, bookkeeping, ...) {
     data
 }
 
-.decode.default <- function(obj, file, name, bookkeeping, ...) {
-    attrs <- decode_attrs(file, name, ...)
-    data <- decode_data(file, name, bookkeeping, ...)
+.decode.default <- function(obj, sel, bookkeeping, ...) {
+    attrs <- decode_attrs(sel, ...)
+    data <- decode_data(sel, bookkeeping, ...)
 
     if(is.null(data))
         return(obj)
@@ -108,7 +113,7 @@ decode_attrs <- function(file, name, bookkeeping, ...) {
     data
 }
 
-decode_S4 <- function(file, name, bookkeeping)
+decode_S4 <- function(sel, bookkeeping)
 {
     pkg <- bookkeeping[["package"]]
     nmspc <- if (identical(pkg, ".GlobalEnv")) {
@@ -124,14 +129,14 @@ decode_S4 <- function(file, name, bookkeeping)
     proto_obj <- .Call(methods:::C_new_object, class_def)
     
     ## '.Data' slot referred to as "DataPart"; see ?getDataPart
-    data_part <- decode_data(file, name, bookkeeping)
+    data_part <- decode_data(sel, bookkeeping)
     if(!is.null(data_part) && ! (".Data" %in% slotNames(proto_obj)))
         stop(".Data information retrieved for general S4 object",
              "(should not have .Data)")
     if(!is.null(data_part))
         slot(proto_obj, ".Data") <- data_part
     
-    attrs <- decode_attrs(file, name) ## list
+    attrs <- decode_attrs(sel) ## list
     attributes(proto_obj) <- attrs
 
     proto_obj
