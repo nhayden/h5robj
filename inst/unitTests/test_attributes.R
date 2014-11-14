@@ -74,8 +74,12 @@ test_named_vector_subsetted <- function() {
 }
 ##test_named_vector_subsetted()
 
+## Old comment:
 ## THIS IS WRONG. Unexpected behavior because using "[" on an object
-## drops all attributes except 'names', 'dim', and 'dimnames'. See ?"["
+## SHOULD drop all attributes except 'names', 'dim', and
+## 'dimnames'. See ?"["
+## -------------------------
+## Rewriting to just subset the attribute
 test_named_vector_with_subsetted_attribute <- function() {
     h5fl <- h5robj:::.create_temp_h5()
     vec <- c(a=42L, b=39L, c=101L)
@@ -84,10 +88,9 @@ test_named_vector_with_subsetted_attribute <- function() {
 
     sel <- Selector(file=h5fl, root="foo")
     sel@h5attrs@selectors["fabulous"] <- sel@h5attrs@selectors[["fabulous"]][2:4]
-    sel2 <- sel[2:3]
-    res <- mat(sel2)
-    tar <- vec[2:3]
-    attr(tar, "fabulous") <- attributes
+    res <- mat(sel)
+    tar <- vec
+    attr(tar, "fabulous") <- attributes(vec)[["fabulous"]][2:4]
     ##print(res); print(tar)
     checkIdentical(tar, res)  
 }
