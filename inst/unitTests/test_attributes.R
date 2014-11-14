@@ -192,4 +192,4 @@ test_unnamed_list_RSelector_whole <- function() {
     ##print(res); print(l)
     checkIdentical(l, res)  
 }
-##test_nunamed_list_RSelector_whole()
+##test_unnamed_list_RSelector_whole()
