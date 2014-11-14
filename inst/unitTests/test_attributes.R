@@ -133,9 +133,14 @@ test_unnamed_list_without_data_RSelector <- function() {
     h5robj::encode(l, h5fl, "foo")
 
     sel <- Selector(file=h5fl, root="foo")
-    res <- mat(sel)
-    ##print(res); print(l)
-    checkIdentical(l, res)  
+    h5ident <- h5id(h5fl, "foo")
+    h5data <- h5robj:::.ListLikeSelector()
+    h5attrs <- h5robj:::.ListLikeSelector()
+    tar <- h5robj:::.RecursiveSelector(h5identifier=h5ident,
+                                       h5data=h5data,
+                                       h5attrs=h5attrs)
+    ##print(sel); print(tar)
+    checkIdentical(tar, sel)  
 }
 ##test_unnamed_list_without_data_RSelector()
 
