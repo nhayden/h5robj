@@ -126,6 +126,10 @@ multidimmat <- function(obj) {
     tmp
 }
 
+setMethod("mat", "RecursiveSelector", function(obj) {
+    return(decodeSel(obj))
+})
+
 ## doesn't handle zero-length objs
 ## doesn't handle recursive objs
 setMethod("mat", "AtomicSelector", function(obj) {

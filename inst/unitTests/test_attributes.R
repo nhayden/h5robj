@@ -95,3 +95,70 @@ test_named_vector_with_subsetted_attribute <- function() {
     checkIdentical(tar, res)  
 }
 ##test_named_vector_with_subsetted_attribute()
+
+test_unnamed_list_RSelector <- function() {
+    h5fl <- h5robj:::.create_temp_h5()
+    l <- list(42, "yeehaw")
+    h5robj::encode(l, h5fl, "foo")
+
+    sel <- Selector(file=h5fl, root="foo")
+    drop <- TRUE
+    dimMax <- 1L
+    dimSelection <- list(binit(1L))
+    data_roots <- c("foo/data/elt1", "foo/data/elt2")
+    mappers <- sapply(data_roots, paste, "data/data", sep="/")
+    elt1_h5ident <- h5id(h5fl, data_roots[[1]])
+    elt1_sel <- h5robj:::.AtomicSelector(h5identifier=elt1_h5ident,
+                                         mapper=mappers[[1]],
+                                         drop=drop, dimMax=dimMax,
+                                         dimSelection=dimSelection)
+    elt2_h5ident <- h5id(h5fl, data_roots[[2]])
+    elt2_sel <- h5robj:::.AtomicSelector(h5identifier=elt2_h5ident,
+                                         mapper=mappers[[2]],
+                                         drop=drop, dimMax=dimMax,
+                                         dimSelection=dimSelection)
+    h5data <- ListLikeSelector(selectors=list(elt1_sel, elt2_sel))
+    h5attrs <- ListLikeSelector(selectors=list())
+    top_h5ident <- h5id(h5fl, "foo")
+    tar <- h5robj:::.RecursiveSelector(h5identifier=top_h5ident,
+                                       h5data=h5data, h5attrs=h5attrs)
+    ##print(res); print(tar)
+    checkIdentical(tar, sel)  
+}
+##test_unnamed_list_RSelector()
+
+test_unnamed_list_without_data_RSelector <- function() {
+    h5fl <- h5robj:::.create_temp_h5()
+    l <- list()
+    h5robj::encode(l, h5fl, "foo")
+
+    sel <- Selector(file=h5fl, root="foo")
+    res <- mat(sel)
+    ##print(res); print(l)
+    checkIdentical(l, res)  
+}
+##test_unnamed_list_without_data_RSelector()
+
+test_named_list_RSelector <- function() {
+    h5fl <- h5robj:::.create_temp_h5()
+    l <- list(6L, 40:42, letters[15:18])
+    h5robj::encode(l, h5fl, "foo")
+
+    sel <- Selector(file=h5fl, root="foo")
+    res <- mat(sel)
+    ##print(res); print(l)
+    checkIdentical(l, res)  
+}
+##test_named_list_RSelector()
+
+test_unnamed_list_RSelector_whole <- function() {
+    h5fl <- h5robj:::.create_temp_h5()
+    l <- list(6L, 40:42, letters[15:18])
+    h5robj::encode(l, h5fl, "foo")
+
+    sel <- Selector(file=h5fl, root="foo")
+    res <- mat(sel)
+    ##print(res); print(l)
+    checkIdentical(l, res)  
+}
+##test_nunamed_list_RSelector_whole()
