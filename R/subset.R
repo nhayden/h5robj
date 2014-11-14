@@ -1,7 +1,7 @@
 ##setMethod("[", c("Selector", "numeric", "missing", "ANY"),
-setMethod("[", c("Selector", "ANY"),
+setMethod("[", c("AtomicSelector", "ANY"),
     function(x, i, j, ..., drop=TRUE) {
-        ndims <- length(x@dimMax[[1L]])
+        ndims <- length(x@dimMax)
         nsubscripts <- if(missing(drop)) nargs() - 1L else nargs() - 2L
         if(nsubscripts != ndims) {
             stop("dim mismatch: obj has ", ndims, " dims, but ",
@@ -60,14 +60,14 @@ setMethod("[", c("Selector", "ANY"),
         nonnull <- which(sapply(selections, Negate(is.null)))
         for(dimi in nonnull) {
             imax <- max(selections[[dimi]])
-            if(imax > x@dimMax[[1L]][[dimi]]) {
+            if(imax > x@dimMax[[dimi]]) {
                 stop("max index for dim ", dimi, " exceeds upper limit ('",
-                     x@dimMax[[1L]][[dimi]], "')")
+                     x@dimMax[[dimi]], "')")
             }
         }
 
         ## do these steps with one dim at a time, since potentially large
-        dimSelection <- x@dimSelection[[1L]]
+        dimSelection <- x@dimSelection
         for(dimi in nonnull) {
             ## get previously selected indices
             idx <- as.which(dimSelection[[dimi]])
@@ -83,7 +83,7 @@ setMethod("[", c("Selector", "ANY"),
                     dimSelection[[dimi]][idx] & biti
         }
 
-        initialize(x, dimSelection=list(dimSelection), drop=drop)
+        initialize(x, dimSelection=dimSelection, drop=drop)
     }
 )
 
@@ -128,7 +128,7 @@ multidimmat <- function(obj) {
 
 ## doesn't handle zero-length objs
 ## doesn't handle recursive objs
-setMethod("mat", "Selector", function(obj) {
+setMethod("mat", "AtomicSelector", function(obj) {
     return(decodeSel(obj))
     ## need to branch here if atomic vs. recursive (replacing tmp
     ## vs. filling in elements of tmp list)

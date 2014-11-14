@@ -61,11 +61,12 @@ decode_list_like <- function(llsel, retain.names=FALSE, ...) {
 }
 
 read_nugget <- function(sel, bookkeeping, ...) {
-    if(!h5exists(sel@file, sel@mapper))
+    h5ident <- sel@h5identifier
+    if(!h5exists(h5file(sel@h5identifier), sel@mapper))
         stop("data nugget for '", sel@root, "' does not exist in file")
-    if(sum(sel@dimSelection[[1L]][[1L]]) > 0L) {
-        idx <- as.which(sel@dimSelection[[1L]][[1L]])
-        as.vector(h5read(sel@file, sel@mapper, index=list(idx)))
+    if(sum(sel@dimSelection[[1L]]) > 0L) {
+        idx <- as.which(sel@dimSelection[[1L]])
+        as.vector(h5read(h5file(h5ident), sel@mapper, index=list(idx)))
     } else {
         error("0 selections not yet supported")
         ## likely course of action: use code from decode_S3 that
@@ -73,37 +74,44 @@ read_nugget <- function(sel, bookkeeping, ...) {
     }
 }
 
-decode_data <- function(sel, bookkeeping, ...) { 
-    data_name <- paste(sel@root, "data", sep="/")
-    if(!h5exists(sel@file, data_name)) {
-        NULL
+decode_data <- function(sel, bookkeeping, ...) {
+    ## what about objects with no data?
+    if(is(sel, "RecursiveSelector")) {
+        decode_list_like(sel@h5data)
     } else {
-        if(bookkeeping[["sexptype"]] == "VECSXP") {
-            stop("Selector-based VECSXP decoding not supported")
-            ##decode_list_like(AllS(file=sel@file, root=data_name), ...)
-        } else {
-            ##read_nugget(file, data_name, bookkeeping, ...)
-            read_nugget(sel)
-        }
+        read_nugget(sel)
     }
+    ## data_name <- paste(sel@root, "data", sep="/")
+    ## if(!h5exists(sel@file, data_name)) {
+    ##     NULL
+    ## } else {
+    ##     if(bookkeeping[["sexptype"]] == "VECSXP") {
+    ##         stop("Selector-based VECSXP decoding not supported")
+    ##         ##decode_list_like(AllS(file=sel@file, root=data_name), ...)
+    ##     } else {
+    ##         ##read_nugget(file, data_name, bookkeeping, ...)
+    ##         read_nugget(sel)
+    ##     }
+    ## }
 }
 
 decode_attrs <- function(sel, bookkeeping, ...) {
-    attrs_name <- paste(sel@root, "attrs", sep="/")
-    if(!h5exists(sel@file, attrs_name)) {
+    if(length(sel@h5attrs@selectors) == 0L) {
         NULL
     } else {
         llsel_selectors <- sel@h5attrs@selectors
+        ## fill Implicits with top-level selections
         for(elt in seq_along(llsel_selectors)) {
             if(is(llsel_selectors[[elt]], "Implicit")) {
-                attrsel <- Selector(sel@file, llsel_selectors[[elt]]@root)
+                h5ident <- llsel_selectors[[elt]]@h5identifier
+                attrsel <- AtomicSelector(h5file(h5ident),
+                                          h5root(h5ident))
                 attrsel@dimSelection <- sel@dimSelection
                 llsel_selectors[[elt]] <- attrsel
             }
         }
-        llsel <- ListLikeSelector(h5data=llsel_selectors)
+        llsel <- ListLikeSelector(selectors=llsel_selectors)
         decode_list_like(llsel, retain.names=TRUE, ...)
-        ##decode_list_like(AllS(file=sel@file, root=attrs_name), retain.names=TRUE, ...)
     }
 }
 

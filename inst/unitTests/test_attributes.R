@@ -14,6 +14,8 @@ test_unnamed_vector_ASelector <- function() {
     sel <- Selector(file=h5fl, root="foo")
     dimMax <- 3L
     dimSelection <- list(binit(3L))
+    h5ident <- h5id(h5fl, "foo")
+    h5attrs <- ListLikeSelector(selectors=list())
     sel_tar <- new("AtomicSelector", h5identifier=h5ident,
                    mapper="foo/data/data",
                    drop=TRUE, dimMax=dimMax, dimSelection=dimSelection,
@@ -85,10 +87,8 @@ test_named_vector_with_subsetted_attribute <- function() {
     sel2 <- sel[2:3]
     res <- mat(sel2)
     tar <- vec[2:3]
-    browser()
     attr(tar, "fabulous") <- attributes
     ##print(res); print(tar)
-    browser()
     checkIdentical(tar, res)  
 }
 ##test_named_vector_with_subsetted_attribute()
