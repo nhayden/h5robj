@@ -96,6 +96,23 @@ test_named_vector_with_subsetted_attribute <- function() {
 }
 ##test_named_vector_with_subsetted_attribute()
 
+test_unnamed_list_without_data_RSelector <- function() {
+    h5fl <- h5robj:::.create_temp_h5()
+    l <- list()
+    h5robj::encode(l, h5fl, "foo")
+
+    sel <- Selector(file=h5fl, root="foo")
+    h5ident <- h5id(h5fl, "foo")
+    h5data <- h5robj:::.ListLikeSelector()
+    h5attrs <- h5robj:::.ListLikeSelector()
+    tar <- h5robj:::.RecursiveSelector(h5identifier=h5ident,
+                                       h5data=h5data,
+                                       h5attrs=h5attrs)
+    ##print(sel); print(tar)
+    checkIdentical(tar, sel)  
+}
+##test_unnamed_list_without_data_RSelector()
+
 test_unnamed_list_RSelector <- function() {
     h5fl <- h5robj:::.create_temp_h5()
     l <- list(42, "yeehaw")
@@ -127,32 +144,41 @@ test_unnamed_list_RSelector <- function() {
 }
 ##test_unnamed_list_RSelector()
 
-test_unnamed_list_without_data_RSelector <- function() {
-    h5fl <- h5robj:::.create_temp_h5()
-    l <- list()
-    h5robj::encode(l, h5fl, "foo")
-
-    sel <- Selector(file=h5fl, root="foo")
-    h5ident <- h5id(h5fl, "foo")
-    h5data <- h5robj:::.ListLikeSelector()
-    h5attrs <- h5robj:::.ListLikeSelector()
-    tar <- h5robj:::.RecursiveSelector(h5identifier=h5ident,
-                                       h5data=h5data,
-                                       h5attrs=h5attrs)
-    ##print(sel); print(tar)
-    checkIdentical(tar, sel)  
-}
-##test_unnamed_list_without_data_RSelector()
-
 test_named_list_RSelector <- function() {
     h5fl <- h5robj:::.create_temp_h5()
-    l <- list(6L, 40:42, letters[15:18])
+    l <- list(a=42, funtastic="yeehaw")
     h5robj::encode(l, h5fl, "foo")
 
     sel <- Selector(file=h5fl, root="foo")
-    res <- mat(sel)
-    ##print(res); print(l)
-    checkIdentical(l, res)  
+
+    #h5data
+    drop <- TRUE
+    dimMax <- 1L
+    dimSelection <- list(binit(1L))
+    data_roots <- c("foo/data/elt1", "foo/data/elt2")
+    mappers <- sapply(data_roots, paste, "data/data", sep="/")
+    elt1_h5ident <- h5id(h5fl, data_roots[[1]])
+    elt1_sel <- h5robj:::.AtomicSelector(h5identifier=elt1_h5ident,
+                                         mapper=mappers[[1]],
+                                         drop=drop, dimMax=dimMax,
+                                         dimSelection=dimSelection)
+    elt2_h5ident <- h5id(h5fl, data_roots[[2]])
+    elt2_sel <- h5robj:::.AtomicSelector(h5identifier=elt2_h5ident,
+                                         mapper=mappers[[2]],
+                                         drop=drop, dimMax=dimMax,
+                                         dimSelection=dimSelection)
+    h5data <- ListLikeSelector(selectors=list(elt1_sel, elt2_sel))
+
+    #h5attrs
+    names_h5ident <- h5id(h5fl, "foo/attrs/names")
+    names_sel <- h5robj:::.Implicit(h5identifier=names_h5ident)
+    h5attrs <- ListLikeSelector(selectors=list(names=names_sel))
+
+    top_h5ident <- h5id(h5fl, "foo")
+    tar <- h5robj:::.RecursiveSelector(h5identifier=top_h5ident,
+                                       h5data=h5data, h5attrs=h5attrs)
+    ##print(res); print(tar)
+    checkIdentical(tar, sel)  
 }
 ##test_named_list_RSelector()
 
