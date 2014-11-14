@@ -1,5 +1,6 @@
-decode_bookkeeping <- function(sel) {
-    bookkeeping <- lapply(h5readAttributes(sel@file, sel@root), as.character)
+decode_bookkeeping <- function(id) {
+    ##bookkeeping <- lapply(h5readAttributes(sel@file, sel@root), as.character)
+    bookkeeping <- lapply(h5readAttributes(h5file(id), h5root(id)), as.character)
     H5close()
     bookkeeping
 }
@@ -9,7 +10,7 @@ decode <- function(file, name, ...) {
 }
 
 decodeSel <- function(sel) {
-    bkk <- decode_bookkeeping(sel)
+    bkk <- decode_bookkeeping(sel@h5identifier)
     bkk_names <- names(bkk)
     if( !("class" %in% bkk_names) || !("sexptype" %in% bkk_names) )
         stop("Can't decode; missing bookkeeping information in file")
@@ -46,36 +47,43 @@ decode_S3 <- function(sel, bookkeeping) {
     UseMethod(".decode")
 }
 
-decode_list_like <- function(sel, retain.names=FALSE, ...) {
-    list_elts <- h5ls_immediate_descendants(sel@file, sel@root)
-    res <- vector('list', length(list_elts))
-    if(retain.names) {
+decode_list_like <- function(llsel, retain.names=FALSE, ...) {
+    res <- llsel@selectors
+    if(!retain.names) {
         ## FIX ME: include check that names attribute exists in H5?
-        names(res) <- infer_list_names(list_elts)
+        names(res) <- NULL
     }
-    for(i in seq_along(list_elts)) {
-        res[[i]] <- decode(sel@file, list_elts[[i]], ...)
+    for(i in seq_along(res)) {
+        ##res[[i]] <- decode(sel@file, list_elts[[i]], ...)
+        res[[i]] <- decodeSel(res[[i]])
     }
     res
 }
 
 read_nugget <- function(sel, bookkeeping, ...) {
-    nugget_name <- paste(sel@root, "data", sep="/")
-    if(!h5exists(sel@file, nugget_name))
+    if(!h5exists(sel@file, sel@mapper))
         stop("data nugget for '", sel@root, "' does not exist in file")
-    as.vector(h5read(sel@file, nugget_name))
+    if(sum(sel@dimSelection[[1L]][[1L]]) > 0L) {
+        idx <- as.which(sel@dimSelection[[1L]][[1L]])
+        as.vector(h5read(sel@file, sel@mapper, index=list(idx)))
+    } else {
+        error("0 selections not yet supported")
+        ## likely course of action: use code from decode_S3 that
+        ## creates empty S3 object
+    }
 }
 
-decode_data <- function(sel, bookkeeping, ...) {
+decode_data <- function(sel, bookkeeping, ...) { 
     data_name <- paste(sel@root, "data", sep="/")
     if(!h5exists(sel@file, data_name)) {
         NULL
     } else {
         if(bookkeeping[["sexptype"]] == "VECSXP") {
-            decode_list_like(AllS(file=sel@file, root=data_name), ...)
+            stop("Selector-based VECSXP decoding not supported")
+            ##decode_list_like(AllS(file=sel@file, root=data_name), ...)
         } else {
             ##read_nugget(file, data_name, bookkeeping, ...)
-            read_nugget(AllS(sel@file, data_name), bookkeeping, ...)
+            read_nugget(sel)
         }
     }
 }
@@ -85,7 +93,17 @@ decode_attrs <- function(sel, bookkeeping, ...) {
     if(!h5exists(sel@file, attrs_name)) {
         NULL
     } else {
-        decode_list_like(AllS(file=sel@file, root=attrs_name), retain.names=TRUE, ...)
+        llsel_selectors <- sel@h5attrs@selectors
+        for(elt in seq_along(llsel_selectors)) {
+            if(is(llsel_selectors[[elt]], "Implicit")) {
+                attrsel <- Selector(sel@file, llsel_selectors[[elt]]@root)
+                attrsel@dimSelection <- sel@dimSelection
+                llsel_selectors[[elt]] <- attrsel
+            }
+        }
+        llsel <- ListLikeSelector(h5data=llsel_selectors)
+        decode_list_like(llsel, retain.names=TRUE, ...)
+        ##decode_list_like(AllS(file=sel@file, root=attrs_name), retain.names=TRUE, ...)
     }
 }
 

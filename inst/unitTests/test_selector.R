@@ -239,37 +239,6 @@ test_unnamed_vector <- function() {
 ## }
 ## test_named_dimnamed_matrix()
 
-test_named_vector <- function() {
-    h5fl <- h5robj:::.create_temp_h5()
-    vec <- c(a=42L, b=39L, c=101L)
-    h5robj::encode(vec, h5fl, "foo")
-    
-    sel <- Selector(file=h5fl, root="foo")
-    sel2 <- sel[2:3]
-    res <- mat(sel2)
-    tar <- vec[2:3]
-    ##print(res); print(tar)
-    checkIdentical(tar, res)
-}
-##test_named_vector()
-
-test_named_vector_with_subsetted_attribute <- function() {
-    h5fl <- h5robj:::.create_temp_h5()
-    vec <- c(a=42L, b=39L, c=101L)
-    attr(vec, "fabulous") <- 21:25
-    h5robj::encode(vec, h5fl, "foo")
-
-    sel <- Selector(file=h5fl, root="foo")
-    sel@h5attrs["fabulous"] <- sel@h5attrs[["fabulous"]][2:4]
-    sel2 <- sel[2:3]
-    res <- mat(sel2)
-    tar <- vec[2:3]
-    attr(tar, "fabulous") <- 22:24
-    ##print(res); print(tar)
-    checkIdentical(tar, res)  
-}
-##test_named_vector_with_subsetted_attribute()
-
 ## COMMON SUBSET PERMUTATIONS
 
 test_common_subsets_repeated <- function() {
