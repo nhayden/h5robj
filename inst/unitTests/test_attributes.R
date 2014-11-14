@@ -193,3 +193,20 @@ test_unnamed_list_RSelector_whole <- function() {
     checkIdentical(l, res)  
 }
 ##test_unnamed_list_RSelector_whole()
+
+options(error=recover)
+## focus here is keeping names in sync, converting Implicit PROBLEM:
+## in order to convert Implicit names, have to know *which* elements
+## of h5data were selected, not just the length of h5data
+test_named_list_RSelector_whole <- function() {
+    h5fl <- h5robj:::.create_temp_h5()
+    l <- list(a=6L, fun=40:42, tastic=letters[15:18])
+    h5robj::encode(l, h5fl, "foo")
+
+    sel <- Selector(file=h5fl, root="foo")
+    res <- mat(sel)
+    print(res); print(l)
+    browser()
+    checkIdentical(l, res)  
+}
+test_named_list_RSelector_whole()

@@ -101,14 +101,44 @@ decode_attrs <- function(sel, bookkeeping, ...) {
     } else {
         llsel_selectors <- sel@h5attrs@selectors
         ## fill Implicits with top-level selections
-        for(elt in seq_along(llsel_selectors)) {
-            if(is(llsel_selectors[[elt]], "Implicit")) {
-                h5ident <- llsel_selectors[[elt]]@h5identifier
-                attrsel <- AtomicSelector(h5file(h5ident),
-                                          h5root(h5ident))
-                attrsel@dimSelection <- sel@dimSelection
-                llsel_selectors[[elt]] <- attrsel
+        if(is(sel, "AtomicSelector")) {
+            for(elt in seq_along(llsel_selectors)) {
+                if(is(llsel_selectors[[elt]], "Implicit")) {
+                    h5ident <- llsel_selectors[[elt]]@h5identifier
+                    attrsel <- AtomicSelector(h5file(h5ident),
+                                              h5root(h5ident))
+                    attrsel@dimSelection <- sel@dimSelection
+                    llsel_selectors[[elt]] <- attrsel
+                }
             }
+        } else if(is(sel, "RecursiveSelector")) {
+            attr_names <- names(llsel_selectors)
+            ## process names specially
+            if("names" %in% attr_names) {
+                names_attr <- llsel_selectors[["names"]]
+                if(is(names_attr, "Implicit")) {
+                    data_length <- length(sel@h5data@selectors)
+                    dimSelection <- list(binit(data_length))
+                    h5ident <- names_attr@h5identifier
+                    ## XXXX FIX ME: selects all--can't use length of
+                    ## h5data, because don't know which names were
+                    ## left behind!!!!
+                    new_names_attr <- AtomicSelector(h5file(h5ident),
+                                                     h5root(h5ident))
+                    llsel_selectors[["names"]] <- new_names_attr
+                } else {
+                    ## using an explicit names selector; must check
+                    ## lengths coincide
+                    data_length <- length(sel@h5data@selectors)
+                    names_length <- sum(names_attr@dimSelection[[1]])
+                    if(data_length != names_length) {
+                        stop("length of selected names must match number ",
+                             "of data elements in RecursiveSelector")
+                    }
+                }
+            }
+        } else {
+            stop("decoding attrs for class '", class(sel), "' not supported")
         }
         llsel <- ListLikeSelector(selectors=llsel_selectors)
         decode_list_like(llsel, retain.names=TRUE, ...)
