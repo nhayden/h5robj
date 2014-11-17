@@ -1,3 +1,10 @@
+setMethod("[", c("RecursiveSelector", "ANY"),
+    function(x, i) {
+        h5data <- x@h5data@selectors[i]
+        initialize(x, h5data=ListLikeSelector(selectors=h5data))
+    }
+)
+
 ##setMethod("[", c("Selector", "numeric", "missing", "ANY"),
 setMethod("[", c("AtomicSelector", "ANY"),
     function(x, i, j, ..., drop=TRUE) {
