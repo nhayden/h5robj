@@ -137,7 +137,9 @@ test_unnamed_list_RSelector <- function() {
     h5data <- ListLikeSelector(selectors=list(elt1_sel, elt2_sel))
     h5attrs <- ListLikeSelector(selectors=list())
     top_h5ident <- h5id(h5fl, "foo")
+    selection_indices <- seq_along(l)
     tar <- h5robj:::.RecursiveSelector(h5identifier=top_h5ident,
+                                       selection_indices=selection_indices,
                                        h5data=h5data, h5attrs=h5attrs)
     ##print(res); print(tar)
     checkIdentical(tar, sel)  
@@ -175,7 +177,9 @@ test_named_list_RSelector <- function() {
     h5attrs <- ListLikeSelector(selectors=list(names=names_sel))
 
     top_h5ident <- h5id(h5fl, "foo")
+    selection_indices <- seq_along(l)
     tar <- h5robj:::.RecursiveSelector(h5identifier=top_h5ident,
+                                       selection_indices=selection_indices,
                                        h5data=h5data, h5attrs=h5attrs)
     ##print(res); print(tar)
     checkIdentical(tar, sel)  
@@ -222,3 +226,17 @@ test_named_list_RSelector_whole <- function() {
     checkIdentical(l, res)  
 }
 ##test_named_list_RSelector_whole()
+
+test_named_list_RSelector_subsetted <- function() {
+    h5fl <- h5robj:::.create_temp_h5()
+    l <- list(a=6L, fun=40:42, tastic=letters[15:18])
+    h5robj::encode(l, h5fl, "foo")
+
+    sel <- Selector(file=h5fl, root="foo")
+    sel2 <- sel[2:3]
+    res <- mat(sel2)
+    tar <- l[2:3]
+    ##print(res); print(tar)
+    checkIdentical(tar, res)  
+}
+##test_named_list_RSelector_subsetted()

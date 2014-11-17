@@ -117,14 +117,13 @@ decode_attrs <- function(sel, bookkeeping, ...) {
             if("names" %in% attr_names) {
                 names_attr <- llsel_selectors[["names"]]
                 if(is(names_attr, "Implicit")) {
-                    data_length <- length(sel@h5data@selectors)
-                    dimSelection <- list(binit(data_length))
                     h5ident <- names_attr@h5identifier
-                    ## XXXX FIX ME: selects all--can't use length of
-                    ## h5data, because don't know which names were
-                    ## left behind!!!!
                     new_names_attr <- AtomicSelector(h5file(h5ident),
                                                      h5root(h5ident))
+                    selection_indices <- sel@selection_indices
+                    top_level_selection <- as.bit.which(selection_indices,
+                                                        max(selection_indices))
+                    new_names_attr@dimSelection <- list(top_level_selection)
                     llsel_selectors[["names"]] <- new_names_attr
                 } else {
                     ## using an explicit names selector; must check

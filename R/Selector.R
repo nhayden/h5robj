@@ -58,6 +58,7 @@ AtomicSelector <- function(file, root) {
 .RecursiveSelector <- setClass("RecursiveSelector",
                                slots=list(
                                  h5identifier="h5id",
+                                 selection_indices="integer",
                                  h5data="ListLikeSelector",
                                  h5attrs="ListLikeSelector"))
 setMethod(show, "RecursiveSelector", function(object) {
@@ -77,7 +78,9 @@ RecursiveSelector <- function(file, root) {
     data_group_path <- paste(root, "data", sep="/")
     h5attrs <- ListLikeSelector(file, attrs_group_path, is.attrs=TRUE)
     h5data <- ListLikeSelector(file, data_group_path, is.attrs=FALSE)
-    .RecursiveSelector(h5identifier=h5ident, h5data=h5data, h5attrs=h5attrs)
+    selection_indices <- seq_along(h5data@selectors)
+    .RecursiveSelector(h5identifier=h5ident, selection_indices=selection_indices,
+                       h5data=h5data, h5attrs=h5attrs)
 }
 
 Selector <- function(file, root) {
