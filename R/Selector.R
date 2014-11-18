@@ -83,12 +83,54 @@ RecursiveSelector <- function(file, root) {
                        h5data=h5data, h5attrs=h5attrs)
 }
 
+.RectSelector <- setClass("RectSelector",
+                          slots=list(
+                            h5identifier="h5id",
+                            col_selection="integer",
+                            ## XXXX FIX ME: don't use integer for row_selection!
+                            row_selection="integer",
+                            h5data="ListLikeSelector",
+                            h5attrs="ListLikeSelector"))
+setMethod(show, "RectSelector", function(object) {
+    cat("class: ", class(object), "\n")
+
+    values <- lapply(slotNames(object), slot, object=object)
+    names(values) <- slotNames(object)
+    valnames <- slotNames(object)
+    for(i in seq_along(values)) {
+        cat(paste0(valnames[[i]], ":"), "\n")
+        print(values[[i]])
+    }
+})
+RectSelector <- function(file, root) {
+    h5ident <- h5id(file, root)
+    attrs_group_path <- paste(root, "attrs", sep="/")
+    data_group_path <- paste(root, "data", sep="/")
+    h5attrs <- ListLikeSelector(file, attrs_group_path, is.attrs=TRUE)
+    h5data <- ListLikeSelector(file, data_group_path, all.implicit=TRUE)
+    col_selection <- seq_along(h5data@selectors)
+    row_selection <- integer()
+    if(length(col_selection > 1L)) {
+        ## Use a temporary Selector for first data element to get col lengths
+        elt1_sel <- Selector(file, h5root(h5data@selectors[[1]]@h5identifier))
+        row_selection <- seq_along(elt1_sel@dimSelection[[1]])
+    }
+    .RectSelector(h5identifier=h5ident, col_selection=col_selection,
+                  row_selection=row_selection, h5data=h5data, h5attrs=h5attrs)
+}
+
+
 Selector <- function(file, root) {
     h5ident <- h5id(file, root)
     bkk <- decode_bookkeeping(h5ident)
     sxp_type <- bkk[["sexptype"]]
-    if(sxp_type == "VECSXP")
-        RecursiveSelector(file, root)
+    cl_name <- bkk[["class"]]
+    if(sxp_type == "VECSXP") {
+        if(cl_name != "data.frame")
+            RecursiveSelector(file, root)
+        else
+            RectSelector(file, root)
+    }
     else
         AtomicSelector(file, root)
 }

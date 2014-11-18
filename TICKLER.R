@@ -9,6 +9,8 @@ asel = Selector(h5fl, "foo")
 asel
 
 
-
-## h55 = h5id(h5fl, "foo")
-## h55
+library(h5robj)
+h5fl = h5robj:::.create_temp_h5()
+df = data.frame(a=1:7, b=letters[12:18])
+encode(df, h5fl, "foo")
+sel = Selector(h5fl, "foo")

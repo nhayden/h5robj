@@ -58,7 +58,8 @@ setMethod(show, "ListLikeSelector", function(object) {
 ## second param is group_path instead of typical 'root' because, per
 ## the description with the LLS def, it's not the root of an object,
 ## but a sub-GROUP, e.g., 'data' or 'attrs'
-ListLikeSelector <- function(file, group_path, is.attrs=FALSE, selectors=NULL) {
+ListLikeSelector <- function(file, group_path, is.attrs=FALSE,
+                             all.implicit=FALSE, selectors=NULL) {
     ## for creating a ListLikeSelector directly, e.g., when converting
     ## Implicits
     if(!is.null(selectors))
@@ -67,13 +68,19 @@ ListLikeSelector <- function(file, group_path, is.attrs=FALSE, selectors=NULL) {
         return(.ListLikeSelector(selectors=list()))
     descs_paths <- h5ls_immediate_descendants(file, group_path)
     descs_names <- basename(descs_paths)
-    sels <- lapply(descs_paths, function(x) {
-        ## add more to right operand of %in% as they become relevant
-        if(basename(x) %in% "names" && is.attrs)
-            Implicit(file, x)
-        else
-            Selector(file, x)
-    })
+    sels <- NULL
+    if(all.implicit) {
+        sels <- lapply(descs_paths, function(x)
+                       Implicit(file, x))
+    } else {
+        sels <- lapply(descs_paths, function(x) {
+            ## add more to right operand of %in% as they become relevant
+            if(basename(x) %in% c("names", "row.names", "class") && is.attrs)
+                Implicit(file, x)
+            else
+                Selector(file, x)
+        })
+    }
     if(is.attrs)
         names(sels) <- descs_names
     .ListLikeSelector(selectors=sels)

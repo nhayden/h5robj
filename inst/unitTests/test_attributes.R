@@ -153,7 +153,7 @@ test_named_list_RSelector <- function() {
 
     sel <- Selector(file=h5fl, root="foo")
 
-    #h5data
+    ##h5data
     drop <- TRUE
     dimMax <- 1L
     dimSelection <- list(binit(1L))
@@ -171,7 +171,7 @@ test_named_list_RSelector <- function() {
                                          dimSelection=dimSelection)
     h5data <- ListLikeSelector(selectors=list(elt1_sel, elt2_sel))
 
-    #h5attrs
+    ##h5attrs
     names_h5ident <- h5id(h5fl, "foo/attrs/names")
     names_sel <- h5robj:::.Implicit(h5identifier=names_h5ident)
     h5attrs <- ListLikeSelector(selectors=list(names=names_sel))
@@ -182,7 +182,7 @@ test_named_list_RSelector <- function() {
                                        selection_indices=selection_indices,
                                        h5data=h5data, h5attrs=h5attrs)
     ##print(res); print(tar)
-    checkIdentical(tar, sel)  
+    checkIdentical(tar, sel)
 }
 ##test_named_list_RSelector()
 
@@ -240,3 +240,37 @@ test_named_list_RSelector_subsetted <- function() {
     checkIdentical(tar, res)  
 }
 ##test_named_list_RSelector_subsetted()
+
+test_data.frame_RectSelector <- function() {
+    h5fl <- h5robj:::.create_temp_h5()
+    df <- data.frame(a=1:3, b=letters[11:13])
+    h5robj::encode(df, h5fl, "foo")
+    
+    sel <- Selector(file=h5fl, root="foo")
+
+    ##h5data
+    data_roots <- c("foo/data/elt1", "foo/data/elt2")
+    elt1_h5ident <- h5id(h5fl, data_roots[[1]])
+    elt2_h5ident <- h5id(h5fl, data_roots[[2]])
+    h5data <- ListLikeSelector(selectors=list(
+                                 Implicit(h5fl, data_roots[[1]]),
+                                 Implicit(h5fl, data_roots[[2]])))
+
+    #h5attrs
+    attrs_roots <- c("foo/attrs/class", "foo/attrs/names", "foo/attrs/row.names")
+    h5attrs <- ListLikeSelector(selectors=list(
+                                  class=Implicit(h5fl, attrs_roots[[1]]),
+                                  names=Implicit(h5fl, attrs_roots[[2]]),
+                                  row.names=Implicit(h5fl, attrs_roots[[3]])))
+
+    top_h5ident <- h5id(h5fl, "foo")
+    col_selection <- seq_along(df)
+    row_selection <- seq_along(df[[1]])
+    tar <- h5robj:::.RectSelector(h5identifier=top_h5ident,
+                                  col_selection=col_selection,
+                                  row_selection=row_selection,
+                                  h5data=h5data, h5attrs=h5attrs)
+    ##print(sel); print(tar)
+    checkIdentical(tar, sel)  
+}
+##test_data.frame_RectSelector()

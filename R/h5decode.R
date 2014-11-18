@@ -81,18 +81,6 @@ decode_data <- function(sel, bookkeeping, ...) {
     } else {
         read_nugget(sel)
     }
-    ## data_name <- paste(sel@root, "data", sep="/")
-    ## if(!h5exists(sel@file, data_name)) {
-    ##     NULL
-    ## } else {
-    ##     if(bookkeeping[["sexptype"]] == "VECSXP") {
-    ##         stop("Selector-based VECSXP decoding not supported")
-    ##         ##decode_list_like(AllS(file=sel@file, root=data_name), ...)
-    ##     } else {
-    ##         ##read_nugget(file, data_name, bookkeeping, ...)
-    ##         read_nugget(sel)
-    ##     }
-    ## }
 }
 
 decode_attrs <- function(sel, bookkeeping, ...) {
