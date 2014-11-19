@@ -7,6 +7,16 @@ setMethod("[", c("RecursiveSelector", "integer"),
     }
 )
 
+setMethod("[", c("RectSelector", "ANY"),
+    function(x, i, j) {
+        h5data <- x@h5data@selectors[j]
+        row_selection <- x@row_selection[i]
+        col_selection <- x@col_selection[j]
+        initialize(x, row_selection=row_selection, col_selection=col_selection,
+                   h5data=ListLikeSelector(selectors=h5data))
+    }
+)
+
 ##setMethod("[", c("Selector", "numeric", "missing", "ANY"),
 setMethod("[", c("AtomicSelector", "ANY"),
     function(x, i, j, ..., drop=TRUE) {

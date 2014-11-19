@@ -303,3 +303,17 @@ test_data.frame_RectSelector_whole <- function() {
     checkIdentical(df, res)  
 }
 ##test_data.frame_RectSelector_whole()
+
+test_data.frame_RectSelector_subsetted <- function() {
+    h5fl <- h5robj:::.create_temp_h5()
+    df <- data.frame(a=1:6, b=letters[11:16], x=seq(18.1, 23.1, 1))
+    h5robj::encode(df, h5fl, "foo")
+
+    sel <- Selector(file=h5fl, root="foo")
+    sel2 <- sel[c(1, 3, 5, 6), 2:3]
+    res <- mat(sel2)
+    tar <- df[c(1, 3, 5, 6), 2:3]
+    ##print(res); print(tar)
+    checkIdentical(tar, res)
+}
+##test_data.frame_RectSelector_subsetted()
