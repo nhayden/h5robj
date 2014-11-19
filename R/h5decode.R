@@ -60,37 +60,71 @@ decode_list_like <- function(llsel, retain.names=FALSE, ...) {
     res
 }
 
-read_nugget <- function(sel, bookkeeping, ...) {
-    h5ident <- sel@h5identifier
-    if(!h5exists(h5file(sel@h5identifier), sel@mapper))
-        stop("data nugget for '", sel@root, "' does not exist in file")
-    if(sum(sel@dimSelection[[1L]]) > 0L) {
-        idx <- as.which(sel@dimSelection[[1L]])
-        as.vector(h5read(h5file(h5ident), sel@mapper, index=list(idx)))
-    } else {
-        error("0 selections not yet supported")
-        ## likely course of action: use code from decode_S3 that
-        ## creates empty S3 object
+setGeneric("read_nugget", function(sel, ...) standardGeneric("read_nugget"))
+setMethod("read_nugget", "AtomicSelector",
+    function(sel, ...) {
+        h5ident <- sel@h5identifier
+        if(!h5exists(h5file(sel@h5identifier), sel@mapper))
+            stop("data nugget for '", sel@root, "' does not exist in file")
+        if(sum(sel@dimSelection[[1L]]) > 0L) {
+            idx <- as.which(sel@dimSelection[[1L]])
+            as.vector(h5read(h5file(h5ident), sel@mapper, index=list(idx)))
+        } else {
+            error("0 selections not yet supported")
+            ## likely course of action: use code from decode_S3 that
+            ## creates empty S3 object
+        }
     }
-}
+)
+setMethod("read_nugget", "Implicit",
+    function(sel, ...) {
+        h5ident <- sel@h5identifier
+        data_path <- paste(h5root(h5ident), "data/data", sep="/")
+        if(!h5exists(h5file(sel@h5identifier), data_path))
+            stop("data nugget for '", sel@root, "' does not exist in file")
+        as.vector(h5read(h5file(h5ident), data_path))
+    }
+)
 
-decode_data <- function(sel, bookkeeping, ...) {
-    ## what about objects with no data?
-    if(is(sel, "RecursiveSelector")) {
-        decode_list_like(sel@h5data)
-    } else {
-        read_nugget(sel)
+setGeneric("decode_data", function(sel) standardGeneric("decode_data"))
+
+setMethod("decode_data", "Implicit", function(sel) read_nugget(sel))
+setMethod("decode_data", "AtomicSelector", function(sel)
+          read_nugget(sel))
+setMethod("decode_data", "RecursiveSelector", function(sel)
+          decode_list_like(sel@h5data))
+## XXXX FIX ME: Make specialization that uses a single dimSelection
+## object repeatedly so it's not copied for each data member
+setMethod("decode_data", "RectSelector",
+    function(sel) {
+        row_selection <- sel@row_selection
+        dimSelection <- list(as.bit.which(row_selection, max(row_selection)))
+        llsel_selectors <- sel@h5data@selectors
+        for(elt in seq_along(llsel_selectors)) {
+            if(is(llsel_selectors[[elt]], "Implicit")) {
+                h5ident <- llsel_selectors[[elt]]@h5identifier
+                datasel <- AtomicSelector(h5file(h5ident),
+                                          h5root(h5ident))
+                datasel@dimSelection <- dimSelection
+                llsel_selectors[[elt]] <- datasel
+            }
+        }
+        ##browser()
+        llsel <- ListLikeSelector(selectors=llsel_selectors)
+        decode_list_like(llsel, retain.names=FALSE)
     }
-}
+)
 
 decode_attrs <- function(sel, bookkeeping, ...) {
-    if(length(sel@h5attrs@selectors) == 0L) {
+    if(is(sel, "Implicit") || length(sel@h5attrs@selectors) == 0L) {
         NULL
     } else {
         llsel_selectors <- sel@h5attrs@selectors
         ## fill Implicits with top-level selections
         if(is(sel, "AtomicSelector")) {
-            for(elt in seq_along(llsel_selectors)) {
+            to_convert <- which( ! (names(llsel_selectors) %in% c("class",
+                                                                  "levels")) )
+            for(elt in to_convert) {
                 if(is(llsel_selectors[[elt]], "Implicit")) {
                     h5ident <- llsel_selectors[[elt]]@h5identifier
                     attrsel <- AtomicSelector(h5file(h5ident),
@@ -124,6 +158,45 @@ decode_attrs <- function(sel, bookkeeping, ...) {
                     }
                 }
             }
+        } else if(is(sel, "RectSelector")) {
+            attr_names <- names(llsel_selectors)
+            if("names" %in% attr_names) {
+                names_attr <- llsel_selectors[["names"]]
+                if(is(names_attr, "Implicit")) {
+                    h5ident <- names_attr@h5identifier
+                    new_names_attr <- AtomicSelector(h5file(h5ident),
+                                                     h5root(h5ident))
+                    selection_indices <- sel@col_selection
+                    col_selection <- as.bit.which(selection_indices,
+                                                  max(selection_indices))
+                    new_names_attr@dimSelection <- list(col_selection)
+                    llsel_selectors[["names"]] <- new_names_attr
+                } else {
+                    stop("Using non-Implicit selectors for names not ",
+                         "supported for class 'RectSelector'")
+                }
+            }
+            if("row.names" %in% attr_names) {
+                row.names_attr <- llsel_selectors[["row.names"]]
+                if(is(row.names_attr, "Implicit")) {
+                    h5ident <- row.names_attr@h5identifier
+                    new_row.names_attr <- AtomicSelector(h5file(h5ident),
+                                                         h5root(h5ident))
+                    selection_indices <- sel@row_selection
+                    row_selection <- as.bit.which(selection_indices,
+                                                  max(selection_indices))
+                    new_row.names_attr@dimSelection <- list(row_selection)
+                    llsel_selectors[["row.names"]] <- new_row.names_attr
+                } else {
+                    stop("Using non-Implicit selectors for row.names not ",
+                         "supported for class 'RectSelector'")
+                }
+            }
+            if("class" %in% attr_names) {
+                h5ident <- llsel_selectors[["class"]]@h5identifier
+                llsel_selectors[["class"]] <- AtomicSelector(h5file(h5ident),
+                                                             h5root(h5ident))
+            }
         } else {
             stop("decoding attrs for class '", class(sel), "' not supported")
         }
@@ -147,7 +220,7 @@ decode_attrs <- function(sel, bookkeeping, ...) {
 
 .decode.default <- function(obj, sel, bookkeeping, ...) {
     attrs <- decode_attrs(sel, ...)
-    data <- decode_data(sel, bookkeeping, ...)
+    data <- decode_data(sel)
 
     if(is.null(data))
         return(obj)

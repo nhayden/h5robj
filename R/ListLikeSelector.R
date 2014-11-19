@@ -55,6 +55,8 @@ setMethod(show, "ListLikeSelector", function(object) {
     }
 })
 
+implicit_by_default_attrs <- c("names", "row.names", "class", "levels")
+
 ## second param is group_path instead of typical 'root' because, per
 ## the description with the LLS def, it's not the root of an object,
 ## but a sub-GROUP, e.g., 'data' or 'attrs'
@@ -75,7 +77,7 @@ ListLikeSelector <- function(file, group_path, is.attrs=FALSE,
     } else {
         sels <- lapply(descs_paths, function(x) {
             ## add more to right operand of %in% as they become relevant
-            if(basename(x) %in% c("names", "row.names", "class") && is.attrs)
+            if(is.attrs && basename(x) %in% implicit_by_default_attrs)
                 Implicit(file, x)
             else
                 Selector(file, x)

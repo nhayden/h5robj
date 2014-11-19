@@ -274,3 +274,31 @@ test_data.frame_RectSelector <- function() {
     checkIdentical(tar, sel)  
 }
 ##test_data.frame_RectSelector()
+
+test_factor <- function() {
+    h5fl = h5robj:::.create_temp_h5()
+    vals <- c("d", "a", "a", "e", "e", "b", "a", "e", "c", "b")
+    lvls <- c("a", "b", "c", "d", "e")
+    ff <- factor(vals, lvls)
+    h5robj::encode(ff, h5fl, "foo")
+
+    sel <- Selector(file=h5fl, root="foo")
+    res <- mat(sel)
+    ##print(res); print(ff)
+    checkIdentical(ff, res)
+}
+##test_factor()
+
+## options(error=recover)
+## test_data.frame_RectSelector_whole <- function() {
+##     h5fl <- h5robj:::.create_temp_h5()
+##     ##df <- data.frame(a=1:3, b=letters[11:13])
+##     df <- data.frame(a=1:3, b=c(1.1, 2.1, 3.1))
+##     h5robj::encode(df, h5fl, "foo")
+
+##     sel <- Selector(file=h5fl, root="foo")
+##     res <- mat(sel)
+##     print(res); print(df)
+##     checkIdentical(df, res)  
+## }
+## test_data.frame_RectSelector_whole()
