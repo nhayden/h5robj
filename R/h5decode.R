@@ -109,7 +109,6 @@ setMethod("decode_data", "RectSelector",
                 llsel_selectors[[elt]] <- datasel
             }
         }
-        ##browser()
         llsel <- ListLikeSelector(selectors=llsel_selectors)
         decode_list_like(llsel, retain.names=FALSE)
     }

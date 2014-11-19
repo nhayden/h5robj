@@ -275,6 +275,7 @@ test_data.frame_RectSelector <- function() {
 }
 ##test_data.frame_RectSelector()
 
+## test a stand-alone factor as an S3 object with an explicit 'class' attr
 test_factor <- function() {
     h5fl = h5robj:::.create_temp_h5()
     vals <- c("d", "a", "a", "e", "e", "b", "a", "e", "c", "b")
@@ -289,16 +290,16 @@ test_factor <- function() {
 }
 ##test_factor()
 
-## options(error=recover)
-## test_data.frame_RectSelector_whole <- function() {
-##     h5fl <- h5robj:::.create_temp_h5()
-##     ##df <- data.frame(a=1:3, b=letters[11:13])
-##     df <- data.frame(a=1:3, b=c(1.1, 2.1, 3.1))
-##     h5robj::encode(df, h5fl, "foo")
+## includes a factor column (which in turn has a 'class' attribute)
+test_data.frame_RectSelector_whole <- function() {
+    h5fl <- h5robj:::.create_temp_h5()
+    df <- data.frame(a=1:3, b=letters[11:13])
+    ##df <- data.frame(a=1:3, b=c(1.1, 2.1, 3.1))
+    h5robj::encode(df, h5fl, "foo")
 
-##     sel <- Selector(file=h5fl, root="foo")
-##     res <- mat(sel)
-##     print(res); print(df)
-##     checkIdentical(df, res)  
-## }
-## test_data.frame_RectSelector_whole()
+    sel <- Selector(file=h5fl, root="foo")
+    res <- mat(sel)
+    ##print(res); print(df)
+    checkIdentical(df, res)  
+}
+##test_data.frame_RectSelector_whole()
