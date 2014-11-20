@@ -119,20 +119,23 @@ RectSelector <- function(file, root) {
                   row_selection=row_selection, h5data=h5data, h5attrs=h5attrs)
 }
 
-
 Selector <- function(file, root) {
     h5ident <- h5id(file, root)
     bkk <- decode_bookkeeping(h5ident)
     sxp_type <- bkk[["sexptype"]]
     cl_name <- bkk[["class"]]
-    if(sxp_type == "VECSXP") {
+    if(sxp_type == "VECSXP" || sxp_type == "S4SXP") {
         if(cl_name != "data.frame")
             RecursiveSelector(file, root)
         else
             RectSelector(file, root)
+    } else {
+        single_elt_datapath <- paste(root, "data", "data", sep="/")
+        if(h5exists(file, single_elt_datapath))
+            AtomicSelector(file, root)
+        else
+            Implicit(file, root)
     }
-    else
-        AtomicSelector(file, root)
 }
 
 generate_mapper <- function(file, root) {
@@ -143,11 +146,5 @@ generate_mapper <- function(file, root) {
         stop("Object at '", root, "' does not have data component at '",
              single_elt_datapath,
              "'. Did you mean to create a ListLikeSelector?")
-        ## all_paths <- h5robj:::all_paths_from_h5(file)
-        ## ## identify the paths for the numbered "elt"s under root
-        ## elt_paths = grep(
-        ##   paste0(paste(root, "data", "elt", sep="/"), "[[:digit:]]+$"),
-        ##   all_paths, value=TRUE)
-        ## elt_paths
     }
 }

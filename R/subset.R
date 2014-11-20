@@ -153,6 +153,10 @@ setMethod("mat", "RecursiveSelector", function(obj) {
     decodeSel(obj)
 })
 
+setMethod("mat", "Implicit", function(obj) {
+    decodeSel(obj)
+})
+
 ## doesn't handle zero-length objs
 ## doesn't handle recursive objs
 setMethod("mat", "AtomicSelector", function(obj) {

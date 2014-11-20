@@ -57,7 +57,10 @@ decode_list_like <- function(llsel, retain.names=FALSE, ...) {
         ##res[[i]] <- decode(sel@file, list_elts[[i]], ...)
         res[[i]] <- decodeSel(res[[i]])
     }
-    res
+    if(length(res) == 0L)
+        NULL
+    else
+        res
 }
 
 setGeneric("read_nugget", function(sel, ...) standardGeneric("read_nugget"))
@@ -81,8 +84,10 @@ setMethod("read_nugget", "Implicit",
         h5ident <- sel@h5identifier
         data_path <- paste(h5root(h5ident), "data/data", sep="/")
         if(!h5exists(h5file(sel@h5identifier), data_path))
-            stop("data nugget for '", sel@root, "' does not exist in file")
-        as.vector(h5read(h5file(h5ident), data_path))
+            ##stop("data nugget for '", sel@root, "' does not exist in file")
+            NULL
+        else
+            as.vector(h5read(h5file(h5ident), data_path))
     }
 )
 
@@ -119,6 +124,13 @@ decode_attrs <- function(sel, bookkeeping, ...) {
         NULL
     } else {
         llsel_selectors <- sel@h5attrs@selectors
+        attr_names <- names(llsel_selectors)
+        class_idx <- which(attr_names == "class")
+        if(length(class_idx) > 0L) {
+            h5ident <- llsel_selectors[["class"]]@h5identifier
+            llsel_selectors[["class"]] <- AtomicSelector(h5file(h5ident),
+                                                         h5root(h5ident))
+        }
         ## fill Implicits with top-level selections
         if(is(sel, "AtomicSelector")) {
             to_convert <- which( ! (names(llsel_selectors) %in% c("class",
@@ -133,7 +145,6 @@ decode_attrs <- function(sel, bookkeeping, ...) {
                 }
             }
         } else if(is(sel, "RecursiveSelector")) {
-            attr_names <- names(llsel_selectors)
             ## process names specially
             if("names" %in% attr_names) {
                 names_attr <- llsel_selectors[["names"]]
@@ -191,11 +202,6 @@ decode_attrs <- function(sel, bookkeeping, ...) {
                          "supported for class 'RectSelector'")
                 }
             }
-            if("class" %in% attr_names) {
-                h5ident <- llsel_selectors[["class"]]@h5identifier
-                llsel_selectors[["class"]] <- AtomicSelector(h5file(h5ident),
-                                                             h5root(h5ident))
-            }
         } else {
             stop("decoding attrs for class '", class(sel), "' not supported")
         }
@@ -244,7 +250,7 @@ decode_S4 <- function(sel, bookkeeping)
     proto_obj <- .Call(methods:::C_new_object, class_def)
     
     ## '.Data' slot referred to as "DataPart"; see ?getDataPart
-    data_part <- decode_data(sel, bookkeeping)
+    data_part <- decode_data(sel)
     if(!is.null(data_part) && ! (".Data" %in% slotNames(proto_obj)))
         stop(".Data information retrieved for general S4 object",
              "(should not have .Data)")

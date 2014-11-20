@@ -5,9 +5,26 @@ suppressMessages({
     library(RUnit)
 })
 
+.simpleIRanges <- function() {
+    ## from IRanges man page
+    IRanges:::IRanges(Rle(1:30) %% 5 <= 2)
+}
+
+test_dataless_ASelector <- function() {
+    h5fl <- h5robj:::.create_temp_h5()
+    vec <- integer()
+    encode(vec, h5fl, "foo")
+
+    sel <- Selector(h5fl, "foo")
+    sel_tar <- h5robj:::.Implicit(h5identifier=h5id(h5fl, "foo"))
+    checkIdentical(sel_tar, sel)
+    res <- mat(sel)
+    checkIdentical(vec, res)
+}
+##test_dataless_ASelector()
+
 test_unnamed_vector_ASelector <- function() {
     h5fl <- h5robj:::.create_temp_h5()
-
     vec <- 8:10
     encode(vec, h5fl, "foo")
 
@@ -27,7 +44,6 @@ test_unnamed_vector_ASelector <- function() {
 
 test_named_vector_ASelector <- function() {
     h5fl <- h5robj:::.create_temp_h5()
-
     vec <- c(a=8, b=9, 10)
     encode(vec, h5fl, "foo")
 
@@ -317,3 +333,27 @@ test_data.frame_RectSelector_subsetted <- function() {
     checkIdentical(tar, res)
 }
 ##test_data.frame_RectSelector_subsetted()
+
+## ensure 'package' attribute of class attribute is read
+test_S4_package_attribute <- function() {
+    h5fl <- h5robj:::.create_temp_h5()
+    ## from rhdf5 package
+    h5idcomp <- new("H5IdComponent", ID=13L)
+    h5robj::encode(h5idcomp, h5fl, "foo")
+
+    sel <- Selector(h5fl, "foo")
+    res <- mat(sel)
+    ##print(res); print(h5idcomp)
+    checkIdentical(h5idcomp, res)
+}
+##test_S4_from_package_whole()
+
+test_S4_IRanges_whole <- function() {
+    h5fl <- h5robj:::.create_temp_h5()
+    ir <- .simpleIRanges()
+    encode(ir, h5fl, "foo")
+
+    sel <- Selector(h5fl, "foo")
+    browser()
+}
+test_S4_IRanges_whole()
