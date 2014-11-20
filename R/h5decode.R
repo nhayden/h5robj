@@ -212,7 +212,7 @@ decode_attrs <- function(sel, bookkeeping, ...) {
 
 .decode.name <- function(obj, sel, bookkeeping, ...) {
     attrs <- decode_attrs(sel, ...)
-    data <- decode_data(sel, bookkeeping, ...)
+    data <- decode_data(sel)
 
     if(is.null(data))
         return(obj)

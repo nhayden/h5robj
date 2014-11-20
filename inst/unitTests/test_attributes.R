@@ -7,7 +7,7 @@ suppressMessages({
 
 .simpleIRanges <- function() {
     ## from IRanges man page
-    IRanges:::IRanges(Rle(1:30) %% 5 <= 2)
+    IRanges:::IRanges(S4Vectors:::Rle(1:30) %% 5 <= 2)
 }
 
 test_dataless_ASelector <- function() {
@@ -354,6 +354,21 @@ test_S4_IRanges_whole <- function() {
     encode(ir, h5fl, "foo")
 
     sel <- Selector(h5fl, "foo")
-    browser()
+    res <- mat(sel)
+    ##print(res); print(ir)
+    checkIdentical(ir, res)
 }
-test_S4_IRanges_whole()
+##test_S4_IRanges_whole()
+
+## options(error=recover)
+## test_S4_IRanges_subsetted <- function() {
+##     h5fl <- h5robj:::.create_temp_h5()
+##     ir <- .simpleIRanges()
+##     encode(ir, h5fl, "foo")
+
+##     sel <- Selector(h5fl, "foo")
+##     res <- mat(sel)
+##     ##print(res); print(ir)
+##     checkIdentical(ir, res)
+## }
+##test_S4_IRanges_whole()
