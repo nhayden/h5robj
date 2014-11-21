@@ -48,8 +48,7 @@ AtomicSelector <- function(file, root) {
         dimSelection <- lapply(dimMax[[1L]], binit)
     }
 
-    path_to_attrs_group <- paste(root, "attrs", sep="/")
-    h5attrs <- ListLikeSelector(file, path_to_attrs_group, is.attrs=TRUE)
+    h5attrs <- ListLikeSelector(file, attrs_group(file, root), is.attrs=TRUE)
     
     .AtomicSelector(h5identifier=h5ident, mapper=mapper, drop=TRUE,
                     dimMax=dimMax, dimSelection=dimSelection, h5attrs=h5attrs)
@@ -74,10 +73,8 @@ setMethod(show, "RecursiveSelector", function(object) {
 })
 RecursiveSelector <- function(file, root) {
     h5ident <- h5id(file, root)
-    attrs_group_path <- paste(root, "attrs", sep="/")
-    data_group_path <- paste(root, "data", sep="/")
-    h5attrs <- ListLikeSelector(file, attrs_group_path, is.attrs=TRUE)
-    h5data <- ListLikeSelector(file, data_group_path, is.attrs=FALSE)
+    h5attrs <- ListLikeSelector(file, attrs_group(file, root), is.attrs=TRUE)
+    h5data <- ListLikeSelector(file, data_group(file, root), is.attrs=FALSE)
     selection_indices <- seq_along(h5data@selectors)
     .RecursiveSelector(h5identifier=h5ident, selection_indices=selection_indices,
                        h5data=h5data, h5attrs=h5attrs)
@@ -104,10 +101,8 @@ setMethod(show, "RectSelector", function(object) {
 })
 RectSelector <- function(file, root) {
     h5ident <- h5id(file, root)
-    attrs_group_path <- paste(root, "attrs", sep="/")
-    data_group_path <- paste(root, "data", sep="/")
-    h5attrs <- ListLikeSelector(file, attrs_group_path, is.attrs=TRUE)
-    h5data <- ListLikeSelector(file, data_group_path, all.implicit=TRUE)
+    h5attrs <- ListLikeSelector(file, attrs_group(file, root), is.attrs=TRUE)
+    h5data <- ListLikeSelector(file, data_group(file, root), all.implicit=TRUE)
     col_selection <- seq_along(h5data@selectors)
     row_selection <- integer()
     if(length(col_selection > 1L)) {
@@ -130,8 +125,7 @@ Selector <- function(file, root) {
         else
             RectSelector(file, root)
     } else {
-        single_elt_datapath <- paste(root, "data", "data", sep="/")
-        if(h5exists(file, single_elt_datapath))
+        if(has_single_data_path(file, root))
             AtomicSelector(file, root)
         else
             Implicit(file, root)
@@ -139,9 +133,8 @@ Selector <- function(file, root) {
 }
 
 generate_mapper <- function(file, root) {
-    single_elt_datapath <- paste(root, "data", "data", sep="/")
-    if(h5robj:::h5exists(file, single_elt_datapath)) {
-        single_elt_datapath
+    if(has_single_data_path(file, root)) {
+        single_data_path(file, root)
     } else {
         stop("Object at '", root, "' does not have data component at '",
              single_elt_datapath,

@@ -19,6 +19,43 @@ has_dims_attr <- function(file, name) {
     h5exists(file, dims_path)
 }
 
+.has_attr_x <- function(file, path, attrname) {
+    attrs_path <- attrs_group(file, path)
+    h5exists(file, paste(attrs_path, attrname, sep="/"))
+}
+setGeneric("has_attr_x", function(h5id, attrname) standardGeneric("has_attr_x"))
+setMethod("has_attr_x", c("h5id", "character"), function(h5id, attrname) {
+    .has_attr_x(h5file(h5id), h5root(h5id), attrname)
+})    
+
+has_attrs_group <- function(file, name) {
+    h5exists(file, paste(name, "attrs", sep="/"))
+}
+attrs_group <- function(file, name, checked=FALSE) {
+    attrs_path <- paste(name, "attrs", sep="/")
+    if(!checked) return(attrs_path)
+    if(h5exists(file, attrs_path)) attrs_path else NULL
+}
+has_data_group <- function(file, name) {
+    h5exists(file, paste(name, "data", sep="/"))
+}
+data_group <- function(file, name, checked=FALSE) {
+    data_path <- paste(name, "data", sep="/")
+    if(!checked) return(data_path)
+    if(h5exists(file, data_path)) data_path else NULL
+}
+has_single_data_path <- function(file, name) {
+    h5exists(file, paste(name, "data/data", sep="/"))
+}
+single_data_path <- function(file, name, checked=FALSE) {
+    data_data_path <- paste(name, "data/data", sep="/")
+    if(!checked) return(data_data_path)
+    if(h5exists(file, data_data_path)) data_data_path else NULL
+}
+is_empty_obj <- function(file, name) {
+    (!has_attrs_group(file, name)) && (!has_data_group(file, name))
+}
+
 ## Rtype values that should not have class attribute explicitly set
 .classless_types <- c("logical", "integer", "double", "character", "raw",
                       "list", "NULL", "symbol")

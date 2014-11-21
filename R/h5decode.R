@@ -50,11 +50,9 @@ decode_S3 <- function(sel, bookkeeping) {
 decode_list_like <- function(llsel, retain.names=FALSE, ...) {
     res <- llsel@selectors
     if(!retain.names) {
-        ## FIX ME: include check that names attribute exists in H5?
         names(res) <- NULL
     }
     for(i in seq_along(res)) {
-        ##res[[i]] <- decode(sel@file, list_elts[[i]], ...)
         res[[i]] <- decodeSel(res[[i]])
     }
     if(length(res) == 0L)
@@ -82,9 +80,9 @@ setMethod("read_nugget", "AtomicSelector",
 setMethod("read_nugget", "Implicit",
     function(sel, ...) {
         h5ident <- sel@h5identifier
-        data_path <- paste(h5root(h5ident), "data/data", sep="/")
-        if(!h5exists(h5file(sel@h5identifier), data_path))
-            ##stop("data nugget for '", sel@root, "' does not exist in file")
+        data_path <- single_data_path(h5file(h5ident), h5root(h5ident),
+                                      checked=TRUE)
+        if(is.null(data_path))
             NULL
         else
             as.vector(h5read(h5file(h5ident), data_path))

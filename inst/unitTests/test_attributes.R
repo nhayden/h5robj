@@ -371,4 +371,4 @@ test_S4_IRanges_whole <- function() {
 ##     ##print(res); print(ir)
 ##     checkIdentical(ir, res)
 ## }
-##test_S4_IRanges_whole()
+##test_S4_IRanges_subsetted()
