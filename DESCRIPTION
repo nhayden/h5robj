@@ -10,5 +10,5 @@ LazyLoad: true
 Depends: methods, bit, rhdf5
 Suggests: RUnit, BiocGenerics, IRanges
 Collate: ListLikeSelector.R Selector.R h5code_utils.R h5encode.R h5decode.R
-         subset.R
+         subset.R xh5decode.R
 biocViews: Infrastructure, DataImport
