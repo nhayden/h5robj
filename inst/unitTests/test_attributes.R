@@ -35,7 +35,7 @@ test_unnamed_vector_ASelector <- function() {
     h5attrs <- ListLikeSelector(selectors=list())
     sel_tar <- new("AtomicSelector", h5identifier=h5ident,
                    mapper="foo/data/data",
-                   drop=TRUE, dimMax=dimMax, dimSelection=dimSelection,
+                   drop=FALSE, dimMax=dimMax, dimSelection=dimSelection,
                    h5attrs=h5attrs)
     ##print(sel); print(sel_tar)
     checkIdentical(sel_tar, sel)
@@ -56,7 +56,7 @@ test_named_vector_ASelector <- function() {
                                   names=Implicit(h5fl, "foo/attrs/names")))
     sel_tar <- new("AtomicSelector", h5identifier=h5ident,
                    mapper="foo/data/data",
-                   drop=TRUE, dimMax=dimMax, dimSelection=dimSelection,
+                   drop=FALSE, dimMax=dimMax, dimSelection=dimSelection,
                    h5attrs=h5attrs)
     ##print(sel); print(sel_tar)
     checkIdentical(sel_tar, sel)
@@ -135,7 +135,7 @@ test_unnamed_list_RSelector <- function() {
     h5robj::encode(l, h5fl, "foo")
 
     sel <- Selector(file=h5fl, root="foo")
-    drop <- TRUE
+    drop <- FALSE
     dimMax <- 1L
     dimSelection <- list(binit(1L))
     data_roots <- c("foo/data/elt1", "foo/data/elt2")
@@ -170,7 +170,7 @@ test_named_list_RSelector <- function() {
     sel <- Selector(file=h5fl, root="foo")
 
     ##h5data
-    drop <- TRUE
+    drop <- FALSE
     dimMax <- 1L
     dimSelection <- list(binit(1L))
     data_roots <- c("foo/data/elt1", "foo/data/elt2")

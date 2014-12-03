@@ -55,7 +55,7 @@ setMethod(show, "ListLikeSelector", function(object) {
     }
 })
 
-implicit_by_default_attrs <- c("names", "row.names", "class", "levels")
+implicit_by_default_attrs <- c("names", "row.names", "class", "levels", "dim")
 
 ## second param is group_path instead of typical 'root' because, per
 ## the description with the LLS def, it's not the root of an object,

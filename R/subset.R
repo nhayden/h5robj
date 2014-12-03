@@ -23,8 +23,11 @@ setMethod("[", c("AtomicSelector", "ANY"),
         ndims <- length(x@dimMax)
         nsubscripts <- if(missing(drop)) nargs() - 1L else nargs() - 2L
         if(nsubscripts != ndims) {
-            stop("dim mismatch: obj has ", ndims, " dims, but ",
-                 nsubscripts, " were specified")
+            stop(
+                sprintf("dim mismatch: obj has %d dims but %d %s specified",
+                        ndims, nsubscripts,
+                        if(nsubscripts == 1L) "was" else "were")
+                 )
         }
         selections <- vector('list', ndims)
         if(!missing(i)) {
@@ -110,40 +113,40 @@ setGeneric("mat", function(obj) {
     standardGeneric("mat")
 })
 
-linearize <- function(obj) {
-    len <- prod(obj@dimMax[[1L]])
-    linear <- bit(len)
+## linearize <- function(obj) {
+##     len <- prod(obj@dimMax)
+##     linear <- bit(len)
 
-    ## extent of each dimension (equivalent to calling 'dim' on array-like)
-    d <- obj@dimMax[[1L]]
-    ## w for 'which(es)'
-    w <- lapply(obj@dimSelection[[1L]], function(x) as.which(x))
-    k <- length(w)
-    ## idx starts as indices from last subscript
-    idx <- w[[length(w)]]
-    while(k > 1L) {
-        k <- k - 1L
-        idx <- outer(w[[k]] - 1L, (idx - 1L) * d[k], `+`) + 1L
-    }
+##     ## extent of each dimension (equivalent to calling 'dim' on array-like)
+##     d <- obj@dimMax
+##     ## w for 'which(es)'
+##     w <- lapply(obj@dimSelection, function(x) as.which(x))
+##     k <- length(w)
+##     ## idx starts as indices from last subscript
+##     idx <- w[[length(w)]]
+##     while(k > 1L) {
+##         k <- k - 1L
+##         idx <- outer(w[[k]] - 1L, (idx - 1L) * d[k], `+`) + 1L
+##     }
     
-    linear[idx] <- TRUE
-    linear
-}
+##     linear[idx] <- TRUE
+##     linear
+## }
 
-multidimmat <- function(obj) {
-    ## for now, require all encoded multidim objects to have dim attr
-    if(!has_dims_attr(obj@file, obj@root))
-        stop("expected obj at ", obj@root, " to have dims attr")
+## multidimmat <- function(obj) {
+##     ## for now, require all encoded multidim objects to have dim attr
+##     if(!has_dims_attr(obj@file, obj@root))
+##         stop("expected obj at ", obj@root, " to have dims attr")
 
-    linearselection <- linearize(obj)
-    idx <- as.which(linearselection)
-    tmp <- as.vector(h5read(obj@file, obj@mapper[[1L]],
-                            index=list(idx)))
-    dim(tmp) <- sapply(obj@dimSelection[[1L]], sum)
-    if(obj@drop)
-        tmp <- drop(tmp)
-    tmp
-}
+##     linearselection <- linearize(obj)
+##     idx <- as.which(linearselection)
+##     tmp <- as.vector(h5read(obj@file, obj@mapper[[1L]],
+##                             index=list(idx)))
+##     dim(tmp) <- sapply(obj@dimSelection[[1L]], sum)
+##     if(obj@drop)
+##         tmp <- drop(tmp)
+##     tmp
+## }
 
 setMethod("mat", "RectSelector", function(obj) {
     decodeSel(obj)

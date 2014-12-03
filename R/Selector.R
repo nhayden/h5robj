@@ -42,15 +42,17 @@ AtomicSelector <- function(file, root) {
         dim_attr_path <- paste(root, "attrs/dim/data/data", sep="/")
         dims <- as.integer(h5read(file, dim_attr_path))
         dimMax <- dims
-        dimSelection <- lapply(dimMax[[1L]], binit)
+        dimSelection <- lapply(dimMax, binit)
     } else { ## use dims dictated by underlying H5 object
-        dimMax <- getdims(file, mapper[[1L]])
-        dimSelection <- lapply(dimMax[[1L]], binit)
+        dimMax <- getdims(file, mapper)
+        dimSelection <- lapply(dimMax, binit)
     }
 
     h5attrs <- ListLikeSelector(file, attrs_group(file, root), is.attrs=TRUE)
     
-    .AtomicSelector(h5identifier=h5ident, mapper=mapper, drop=TRUE,
+    .AtomicSelector(h5identifier=h5ident, mapper=mapper,
+                    drop=FALSE, ## start out FALSE so wholesale
+                                ## decoding doesn't drop
                     dimMax=dimMax, dimSelection=dimSelection, h5attrs=h5attrs)
 }
 

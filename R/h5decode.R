@@ -6,7 +6,7 @@ decode_bookkeeping <- function(id) {
 }
 
 decode <- function(file, name, ...) {
-    decodeSel(AllS(file, name))
+    decodeSel(Selector(file, name))
 }
 
 decodeSel <- function(sel) {
@@ -67,16 +67,63 @@ setMethod("read_nugget", "AtomicSelector",
         h5ident <- sel@h5identifier
         if(!h5exists(h5file(sel@h5identifier), sel@mapper))
             stop("data nugget for '", sel@root, "' does not exist in file")
-        if(sum(sel@dimSelection[[1L]]) > 0L) {
-            idx <- as.which(sel@dimSelection[[1L]])
-            as.vector(h5read(h5file(h5ident), sel@mapper, index=list(idx)))
-        } else {
-            error("0 selections not yet supported")
-            ## likely course of action: use code from decode_S3 that
-            ## creates empty S3 object
-        }
+        if(length(sel@dimSelection) == 1L)
+            read_nugget_singledim(sel, ...)
+        else
+            read_nugget_multidim(sel, ...)
     }
 )
+
+read_nugget_singledim <- function(sel, ...) {
+    h5ident <- sel@h5identifier
+    if(sum(sel@dimSelection[[1L]]) > 0L) {
+        idx <- as.which(sel@dimSelection[[1L]])
+        as.vector(h5read(h5file(h5ident), sel@mapper, index=list(idx)))
+    } else {
+        ## UGLY: reads bookeeping info directly instead of relying on
+        ## args; lifted from decode_S3
+        vector(Rtype(decode_bookkeeping(h5ident)[["sexptype"]]))
+    }
+}
+
+linearize <- function(obj) {
+    len <- prod(obj@dimMax)
+    linear <- bit(len)
+
+    ## extent of each dimension (equivalent to calling 'dim' on array-like)
+    d <- obj@dimMax
+    ## w for 'which(es)'
+    w <- lapply(obj@dimSelection, function(x) as.which(x))
+    k <- length(w)
+    ## idx starts as indices from last subscript
+    idx <- w[[length(w)]]
+    while(k > 1L) {
+        k <- k - 1L
+        idx <- outer(w[[k]] - 1L, (idx - 1L) * d[k], `+`) + 1L
+    }
+    
+    linear[idx] <- TRUE
+    linear
+}
+
+read_nugget_multidim <- function(sel, ...) {
+    h5ident <- sel@h5identifier
+    ## for now, require all encoded multidim objects to have dim attr
+    if(!has_dims_attr(h5file(h5ident), h5root(h5ident)))
+        stop("expected obj at ", h5root(h5ident), " to have dims attr")
+
+    linearselection <- linearize(sel)
+    if(sum(linearselection) < 1L) {
+        ## UGLY: reads bookeeping info directly instead of relying on
+        ## args; lifted from decode_S3
+        return(vector(Rtype(decode_bookkeeping(h5ident)[["sexptype"]])))
+    }
+
+    idx <- as.which(linearselection)
+    as.vector(h5read(h5file(h5ident), sel@mapper,
+                     index=list(idx)))
+}
+
 setMethod("read_nugget", "Implicit",
     function(sel, ...) {
         h5ident <- sel@h5identifier
@@ -132,7 +179,8 @@ decode_attrs <- function(sel, bookkeeping, ...) {
         ## fill Implicits with top-level selections
         if(is(sel, "AtomicSelector")) {
             to_convert <- which( ! (names(llsel_selectors) %in% c("class",
-                                                                  "levels")) )
+                                                                  "levels",
+                                                                  "dim")) )
             for(elt in to_convert) {
                 if(is(llsel_selectors[[elt]], "Implicit")) {
                     h5ident <- llsel_selectors[[elt]]@h5identifier
@@ -204,12 +252,22 @@ decode_attrs <- function(sel, bookkeeping, ...) {
             stop("decoding attrs for class '", class(sel), "' not supported")
         }
         llsel <- ListLikeSelector(selectors=llsel_selectors)
-        decode_list_like(llsel, retain.names=TRUE, ...)
+        attrs <- decode_list_like(llsel, retain.names=TRUE, ...)
+        post_process_attrs(sel, bookkeeping, attrs)
     }
 }
 
+post_process_attrs <- function(sel, bookkeeping, attrs) {
+    if(is.null(attrs))
+        return(NULL)
+    if(bookkeeping[["class"]] %in% c("matrix", "array")) {
+        attrs[["dim"]] <- sapply(sel@dimSelection, sum)
+    }
+    attrs
+}
+
 .decode.name <- function(obj, sel, bookkeeping, ...) {
-    attrs <- decode_attrs(sel, ...)
+    attrs <- decode_attrs(sel, bookkeeping, ...)
     data <- decode_data(sel)
 
     if(is.null(data))
@@ -222,13 +280,16 @@ decode_attrs <- function(sel, bookkeeping, ...) {
 }
 
 .decode.default <- function(obj, sel, bookkeeping, ...) {
-    attrs <- decode_attrs(sel, ...)
+    attrs <- decode_attrs(sel, bookkeeping, ...)
     data <- decode_data(sel)
 
     if(is.null(data))
         return(obj)
     if(!is.null(attrs))
         attributes(data) <- attrs
+    if(is(sel, "AtomicSelector") && sel@drop)
+        data <- drop(data)
+
     data
 }
 
@@ -255,7 +316,7 @@ decode_S4 <- function(sel, bookkeeping)
     if(!is.null(data_part))
         slot(proto_obj, ".Data") <- data_part
     
-    attrs <- decode_attrs(sel) ## list
+    attrs <- decode_attrs(sel, bookkeeping) ## list
     attributes(proto_obj) <- attrs
 
     proto_obj

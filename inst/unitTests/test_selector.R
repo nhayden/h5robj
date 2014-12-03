@@ -13,6 +13,16 @@ suppressMessages({
     array(51:74, 2:4)
 }
 
+## for creating ListLikeSelector of Implicits for attributes
+.LLS <- function(file, paths) {
+    nms <- basename(paths)
+    asels <- lapply(paths, function(x) {
+        Implicit(file, x)
+    })
+    names(asels) <- nms
+    ListLikeSelector(selectors=asels)
+}
+
 test_unnamed_matrix_Selector <- function() {
     h5fl <- h5robj:::.create_temp_h5()
 
@@ -20,10 +30,12 @@ test_unnamed_matrix_Selector <- function() {
     encode(m, h5fl, "foo")
 
     sel <- Selector(file=h5fl, root="foo")
-    dimMax <- list(c(2L, 3L))
-    dimSelection <- list(list(binit(2L), binit(3L)))
-    sel_tar <- new("Selector", file=h5fl, root="foo", mapper="foo/data/data",
-                   drop=TRUE, dimMax=dimMax, dimSelection=dimSelection)
+    dimMax <- c(2L, 3L)
+    dimSelection <- list(binit(2L), binit(3L))
+    h5attrs <- .LLS(h5fl, "foo/attrs/dim")
+    sel_tar <- new("AtomicSelector", h5identifier=h5id(h5fl, "foo"),
+                   mapper="foo/data/data", drop=FALSE, dimMax=dimMax,
+                   dimSelection=dimSelection, h5attrs=h5attrs)
     ##print(sel); print(sel_tar)
     checkIdentical(sel_tar, sel)
 }
@@ -38,12 +50,14 @@ test_unnamed_matrix_subset <- function() {
     sel <- Selector(file=h5fl, root="foo")
     sel2 <- sel[2, 2:3]
 
-    dimMax <- list(c(2L, 3L))
+    dimMax <- c(2L, 3L)
     b1 <- as.bit(c(FALSE, TRUE))
     b2 <- as.bit(c(FALSE, TRUE, TRUE))
-    dimSelection <- list(list(b1, b2))
-    sel_tar <- new("Selector", file=h5fl, root="foo", mapper="foo/data/data",
-                   drop=TRUE, dimMax=dimMax, dimSelection=dimSelection)
+    dimSelection <- list(b1, b2)
+    h5attrs <- .LLS(h5fl, "foo/attrs/dim")
+    sel_tar <- new("AtomicSelector", h5identifier=h5id(h5fl, "foo"),
+                   mapper="foo/data/data", drop=TRUE, dimMax=dimMax,
+                   dimSelection=dimSelection, h5attrs=h5attrs)
     checkIdentical(sel_tar, sel2)
 }
 ##test_unnamed_matrix_subset()
@@ -306,7 +320,7 @@ test_common_subsets_zero_included <- function() {
 }
 ##test_common_subsets_zero_included()
 
-test_common_subsets_zero_only <- function() {
+test_common_subsets_zero_only_vector <- function() {
     h5fl <- h5robj:::.create_temp_h5()
     vec <- c(a=42L, b=39L, c=101L)
     h5robj::encode(vec, h5fl, "foo")
@@ -317,7 +331,20 @@ test_common_subsets_zero_only <- function() {
     res <- mat(sel_zero_alone)
     checkIdentical(vec[0], res)
 }
-##test_common_subsets_zero_only()
+##test_common_subsets_zero_only_vector()
+
+test_common_subsets_zero_only_matrix <- function() {
+    h5fl <- h5robj:::.create_temp_h5()
+    m <- .unnamed_matrix()
+    h5robj::encode(m, h5fl, "foo")
+    sel <- Selector(file=h5fl, root="foo")
+
+    ## 0 as only index
+    sel_zero_alone <- sel[0, 0]
+    res <- mat(sel_zero_alone)
+    checkIdentical(m[0, 0], res)
+}
+##test_common_subsets_zero_only_matrix()
 
 test_iterative_subsetting <- function() {
     h5fl <- h5robj:::.create_temp_h5()
