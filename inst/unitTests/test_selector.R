@@ -255,17 +255,17 @@ test_unnamed_vector <- function() {
 
 ## COMMON SUBSET PERMUTATIONS
 
-test_common_subsets_repeated <- function() {
-    h5fl <- h5robj:::.create_temp_h5()
-    vec <- c(a=42L, b=39L, c=101L)
-    h5robj::encode(vec, h5fl, "foo")
-    sel <- Selector(file=h5fl, root="foo")
+## test_common_subsets_repeated <- function() {
+##     h5fl <- h5robj:::.create_temp_h5()
+##     vec <- c(a=42L, b=39L, c=101L)
+##     h5robj::encode(vec, h5fl, "foo")
+##     sel <- Selector(file=h5fl, root="foo")
 
-    ## repeated
-    sel_repeat <- sel[c(1, 1)]
-    res <- mat(sel_repeat)
-    checkIdentical(vec[c(1, 1)], res)
-}
+##     ## repeated
+##     sel_repeat <- sel[c(1, 1)]
+##     res <- mat(sel_repeat)
+##     checkIdentical(vec[c(1, 1)], res)
+## }
 ##test_common_subsets_repeated()
 
 test_common_subsets_discontiguous <- function() {
@@ -281,17 +281,17 @@ test_common_subsets_discontiguous <- function() {
 }
 ##test_common_subsets_discontiguous()
 
-test_common_subsets_arbitrary_order <- function() {
-    h5fl <- h5robj:::.create_temp_h5()
-    vec <- c(a=42L, b=39L, c=101L)
-    h5robj::encode(vec, h5fl, "foo")
-    sel <- Selector(file=h5fl, root="foo")
+## test_common_subsets_arbitrary_order <- function() {
+##     h5fl <- h5robj:::.create_temp_h5()
+##     vec <- c(a=42L, b=39L, c=101L)
+##     h5robj::encode(vec, h5fl, "foo")
+##     sel <- Selector(file=h5fl, root="foo")
 
-    ## arbitrary order
-    sel_arb_ord <- sel[c(2, 1)]
-    res <- mat(sel_arb_ord)
-    checkIdentical(vec[c(2, 1)], res)
-}
+##     ## arbitrary order
+##     sel_arb_ord <- sel[c(2, 1)]
+##     res <- mat(sel_arb_ord)
+##     checkIdentical(vec[c(2, 1)], res)
+## }
 ##test_common_subsets_arbitrary_order()
 
 test_common_subsets_inverse_selection <- function() {
