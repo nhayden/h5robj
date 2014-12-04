@@ -112,121 +112,15 @@ setMethod("[", c("AtomicSelector", "ANY"),
 setGeneric("mat", function(obj) {
     standardGeneric("mat")
 })
-
-## linearize <- function(obj) {
-##     len <- prod(obj@dimMax)
-##     linear <- bit(len)
-
-##     ## extent of each dimension (equivalent to calling 'dim' on array-like)
-##     d <- obj@dimMax
-##     ## w for 'which(es)'
-##     w <- lapply(obj@dimSelection, function(x) as.which(x))
-##     k <- length(w)
-##     ## idx starts as indices from last subscript
-##     idx <- w[[length(w)]]
-##     while(k > 1L) {
-##         k <- k - 1L
-##         idx <- outer(w[[k]] - 1L, (idx - 1L) * d[k], `+`) + 1L
-##     }
-    
-##     linear[idx] <- TRUE
-##     linear
-## }
-
-## multidimmat <- function(obj) {
-##     ## for now, require all encoded multidim objects to have dim attr
-##     if(!has_dims_attr(obj@file, obj@root))
-##         stop("expected obj at ", obj@root, " to have dims attr")
-
-##     linearselection <- linearize(obj)
-##     idx <- as.which(linearselection)
-##     tmp <- as.vector(h5read(obj@file, obj@mapper[[1L]],
-##                             index=list(idx)))
-##     dim(tmp) <- sapply(obj@dimSelection[[1L]], sum)
-##     if(obj@drop)
-##         tmp <- drop(tmp)
-##     tmp
-## }
-
 setMethod("mat", "RectSelector", function(obj) {
     decodeSel(obj)
 })
-
 setMethod("mat", "RecursiveSelector", function(obj) {
     decodeSel(obj)
 })
-
 setMethod("mat", "Implicit", function(obj) {
     decodeSel(obj)
 })
-
-## doesn't handle zero-length objs
-## doesn't handle recursive objs
 setMethod("mat", "AtomicSelector", function(obj) {
-    return(decodeSel(obj))
-    ## need to branch here if atomic vs. recursive (replacing tmp
-    ## vs. filling in elements of tmp list)
-    if(length(obj@dimMax[[1L]]) > 1L)
-        return(multidimmat(obj))
-    if(length(obj@mapper) == 0L) {
-        stop("subsetting zero-length objects not supported")
-    } else if(length(obj@mapper) > 1L) { ## recursive (e.g., list)
-        stop("recursive types not currently supported")
-    } else { ## atomic
-        if(sum(obj@dimSelection[[1L]][[1L]]) == 0L) {
-        ## XXXX FIX ME: HACK! selects the first element then subsets
-        ## with 0. What really needs to happen here is to create an
-        ## empty vector of the right type to hang attributes on.
-        tmp <- as.vector(h5read(obj@file, obj@mapper[[1L]],
-                                index=list(1)))[0]
-        } else {
-            idx <- as.which(obj@dimSelection[[1L]][[1L]])
-            tmp <- as.vector(h5read(obj@file, obj@mapper[[1L]],
-                                    index=list(idx)))
-        }
-    }
-    ## getting attrs out
-    if(length(obj@h5attrs) == 0L)
-        return(tmp)
-    attrs_values <- obj@h5attrs
-    ## for(elt in seq_along(attrs_values)) {
-    ##     ## handle names specially
-    ##     if( ! grepl("/names$", attrs_paths[[elt]]) )
-    ##         attrs_values[[elt]] <- decode(obj@file, attrs_paths[[elt]])
-    ##     else {
-    ##         if(sum(obj@dimSelection[[1L]][[1L]]) > 0L) {
-    ##             idx <- as.which(obj@dimSelection[[1L]][[1L]])
-    ##             name_name <- paste(attrs_paths[[elt]], "data/data", sep="/")
-    ##             attrs_values[[elt]] <- as.vector(h5read(obj@file, name_name,
-    ##                                                 index=list(idx)))
-    ##         }
-    ##         else { ## names attribute must *appear*, even if empty
-    ##             attrs_values[[elt]] <- character(0)
-    ##         }
-    ##     }
-    ## }
-    ## names(attrs_values) <- basename(attrs_paths)
-    for(elt in seq_along(attrs_values)) {
-        ## use selections of top-level object if Placeholder for attribute
-        if(is(attrs_values[[elt]], "Placeholder")) {
-            if(sum(obj@dimSelection[[1L]][[1L]]) > 0) {
-                idx <- as.which(obj@dimSelection[[1L]][[1L]])
-                attrpath <- paste(obj@root, "attrs", names(attrs_values)[[elt]],
-                                  "data/data", sep="/")
-                attrs_values[[elt]] <- as.vector(h5read(obj@file, attrpath,
-                                                       index=list(idx)))
-            }
-        } else {
-            attrSelector <- attrs_values[[elt]]
-            if(sum(attrSelector@dimSelection[[1L]][[1L]]) > 0L) {
-                idx <- as.which(attrSelector@dimSelection[[1L]][[1L]])
-                attrpath <- paste(attrSelector@root, "data/data", sep="/")
-                attrs_values[[elt]] <- as.vector(h5read(obj@file, attrpath,
-                                                        index=list(idx)))
-            }
-        }
-    }
-
-    attributes(tmp) <- attrs_values
-    tmp
+    decodeSel(obj)
 })
