@@ -1,5 +1,6 @@
-setMethod("[", c("RecursiveSelector", "integer"),
+setMethod("[", c("RecursiveSelector", "numeric"),
     function(x, i) {
+        i <- as.integer(i)
         h5data <- x@h5data@selectors[i]
         selection_indices <- x@selection_indices[i]
         initialize(x, selection_indices=selection_indices,
