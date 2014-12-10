@@ -24,10 +24,29 @@ subsetIRanges <- function(x, i) {
 sel3 <- subsetIRanges(sel, c(3, 5, 6))
 identical(ir[c(3, 5, 6)], mat(sel3))
 
-
-
 ## lists
+h5fl <- h5robj:::.create_temp_h5()
+l <- list(a=6L, fun=40:42, tastic=letters[15:18])
+encode(l, h5fl, "foo")
+sel <- Selector(h5fl, "foo")
+mat(sel[c(1, 3)])
 
 ## data.frame
+h5fl <- h5robj:::.create_temp_h5()
+data(mtcars)
+encode(mtcars, h5fl, "foo")
+sel <- Selector(h5fl, "foo")
+identical(mtcars, mat(sel))
+identical(mtcars[seq(1, nrow(mtcars), 3), c(1, 3, 8)],
+          mat(sel[seq(1, nrow(mtcars), 3), c(1, 3, 8)]))
 
-## vectors
+## arbitrary attributes on any object type
+h5fl <- h5robj:::.create_temp_h5()
+vec <- c(a=8, b=9, x=10)
+attr(vec, "fun") <- c("ctional", "tastic", "damental")
+encode(vec, h5fl, "foo")
+sel <- Selector(h5fl, "foo")
+sel@h5attrs@selectors["fun"] = sel@h5attrs@selectors[["fun"]][2:3]
+vec2 <- vec
+attr(vec2, "fun") = attr(vec2, "fun")[2:3]
+identical(vec2, mat(sel))
