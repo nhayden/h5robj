@@ -156,6 +156,19 @@ test_decode_list_unnamed <- function() {
 }
 ##test_decode_list_unnamed()
 
+test_decode_data.frame_greater_than_10_cols <- function() {
+    data(mtcars)
+
+    h5fl <- h5robj:::.create_temp_h5()
+    top_name <- "foo"
+
+    encode(mtcars, h5fl, top_name)
+
+    res <- decode(h5fl, top_name)
+    checkIdentical(mtcars, res)
+}
+##test_decode_data.frame_greater_than_10_cols()
+
 test_decode_factor <- function() {
     ff <- .factor()
 

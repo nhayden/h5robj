@@ -137,10 +137,24 @@ h5ls_immediate_descendants <- function(file, name) {
     input_depth <- length(strsplit(name, "/")[[1]])
     matches_lens <- lapply(strsplit(matches, "/"), length)
     imm_descendants <- matches[matches_lens == (input_depth + 1)]
+    ## if dealing with data elements of recursive structure, need to
+    ## reorder numerically because currently ordered lexicographically
+    if(substr(basename(imm_descendants[[1]]), 1, 3) == "elt")
+        imm_descendants <- reorder_elts_numerically(imm_descendants)
     if(prepended_slash)
         substring(imm_descendants, 2L)
     else
         imm_descendants
+}
+
+reorder_elts_numerically <- function(elts) {
+    if(substr(basename(elts[[1]]), 1, 3) != "elt")
+        stop("names do not appear to be data elements of a recursive structure")
+    nums_only <- sapply(basename(elts), USE.NAMES=FALSE, FUN=function(x) {
+        substr(x, 4, nchar(x))
+    })
+    nums_only <- as.integer(nums_only)
+    elts[order(nums_only)]
 }
 
 ## used by decode to infer the names of list elements

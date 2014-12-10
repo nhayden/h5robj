@@ -50,3 +50,12 @@ extractA <- function(aB) {
 }
 extracted <- extractA(theB)
 extracted@y("z")
+
+
+## tracing h5ls_immediate_descendants
+sml(h5robj)
+h5fl = h5robj:::.create_temp_h5()
+data(mtcars)
+encode(mtcars, h5fl, "foo")
+##trace(h5ls_immediate_descendants, tracer=quote(if(name == "foo/data")browser()))
+decode(h5fl, "foo")

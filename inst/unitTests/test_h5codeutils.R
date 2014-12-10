@@ -31,7 +31,14 @@ test_h5ls_immediate_descendants <- function() {
     tar_descs <- c("foo/attrs/class", "foo/attrs/levels")
     checkIdentical(tar_descs, descs)
 }
-test_h5ls_immediate_descendants()
+##test_h5ls_immediate_descendants()
+
+test_reorder_elts_numerically <- function() {
+    elt_names <- c("elt13", "elt8", "elt10")
+    identical(c("elt8", "elt10", "elt13"), reorder_elts_numerically(elt_names))
+    checkException(reorder_elts_numerically("bogus"))
+}
+##test_reorder_elts_numerically()
 
 test_has_groups <- function() {
     h5fl <- h5robj:::.create_temp_h5()
