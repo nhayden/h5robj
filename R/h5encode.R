@@ -12,12 +12,17 @@ encode_bookkeeping <- function(obj, file, name, ...) {
     H5close()
 }
 
-encode <- function(obj, file, name, ...)
-    UseMethod("encode")
+encode <- function(obj, file, name, ...) {
+    .encode(obj, file, name, ...)
+    Selector(file, name)
+}
 
-setGeneric("encode", signature="obj")
+.encode <- function(obj, file, name, ...)
+    UseMethod(".encode")
 
-setMethod("encode", "ANY", function(obj, file, name, ...) {
+setGeneric(".encode", signature="obj")
+
+setMethod(".encode", "ANY", function(obj, file, name, ...) {
     h5createGroup(file, name)
     encode_bookkeeping(obj, file, name)
     encode_attrs(obj, file, name)
@@ -63,11 +68,11 @@ encode_list_like <- function(obj, file, name, must.use.names=FALSE, ...) {
         group_names <- paste0("elt", seq_along(obj))
     for(i in seq_along(obj)) {
         sub_name <- paste(name, group_names[[i]], sep="/")
-        encode(obj[[i]], file, sub_name, ...)
+        .encode(obj[[i]], file, sub_name, ...)
     }
 }
 
-encode.name <- function(obj, file, name, ...) {
+.encode.name <- function(obj, file, name, ...) {
     if(is.null(obj))
         return()
     h5createGroup(file, name)
@@ -75,7 +80,7 @@ encode.name <- function(obj, file, name, ...) {
     h5write(as.character(obj), file, data_name, ...)
 }
 
-encode.default <- function(obj, file, name, ...) {
+.encode.default <- function(obj, file, name, ...) {
     ## FIX ME: is there a way to avoid knowing about "S4" class (which
     ## represents an empty obj with the S4 bit set)?
     if(is.null(obj) || class(obj) == "S4")

@@ -1,5 +1,5 @@
 suppressMessages({
-    library(rhdf5)
+    library(h5robj)
     library(IRanges)
 })
 
@@ -570,3 +570,12 @@ test_encode_matrix <- function() {
     checkIdentical(names(dimnames(mx)), dimnames_names_data)
 }
 ##test_encode_matrix()
+
+test_encode_return_Selector <- function() {
+    h5fl <- h5robj:::.create_temp_h5()
+
+    vec <- 8:10
+    sel <- encode(vec, h5fl, "foo")
+    identical(Selector(h5fl, "foo"), sel)
+}
+##test_encode_return_Selector()
