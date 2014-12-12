@@ -5,7 +5,7 @@ Disk-based representation of R objects with rectangular subsetting functionality
 Object types supported
 ----------------------
 h5robj currently supports R objects of arbitrary types (including S3/S4), as long as they are composed of objects that are of the following types or are composed of or inherit from the following types:
-* atomic vectors
+* atomic vector types supported by [rhdf5](http://www.bioconductor.org/packages/release/bioc/html/rhdf5.html "Bioconductor rhdf5 package"); a notable missing type is `complex`.
 * lists
 * name / symbol objects (`SYMSXP`s in C)
 
