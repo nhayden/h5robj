@@ -83,14 +83,26 @@ Rtype <- function(x) {
            stop("unhandled h5type '", x, "'"))
 }
 
-.create_temp_h5 <- function() {
-    h5fl <- tempfile()
+## The purpose here is to generate a unique-ISH string to use as a
+## default root name in the encode function
+.gen_timestamp_string <- function() {
+    now <- Sys.time()
+    opds <- options(digits.secs=6)
+    on.exit(options(opds))
+    secs <- as.character(as.numeric(as.POSIXct(now)))
+    sub("\\.", "", secs)
+}
+
+temph5 <- function() {
+    h5fl <- tempfile(fileext=".h5")
     if(interactive())
         message(h5fl)
     stopifnot(h5createFile(h5fl))
     ## return path to temp h5
     h5fl
 }
+## TODO: replace use of .create_temp_h5() in unit tests with temph5
+.create_temp_h5 <- temph5
 
 getdims <- function(file, name) {
     fid <- H5Fopen(file)
