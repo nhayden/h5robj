@@ -12,9 +12,10 @@ encode_bookkeeping <- function(obj, file, name, ...) {
     H5close()
 }
 
-encode <- function(obj, file, name, ...) {
+encode <- function(obj, file=temph5(), name=.gen_timestamp_string(),
+                   create_selector=TRUE, ...) {
     .encode(obj, file, name, ...)
-    Selector(file, name)
+    if(create_selector) Selector(file, name) else file
 }
 
 .encode <- function(obj, file, name, ...)
